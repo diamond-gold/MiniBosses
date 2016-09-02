@@ -1,0 +1,16 @@
+name: MiniBosses
+main: MiniBosses\Main
+description: Adds very customisable Bosses
+version: 1.0.0
+api: 1.0.0
+load: POSTWORLD
+author: ace
+commands:
+  minibosses:
+    description: control MiniBosses
+    usage: "/minibosses <create/delete>"
+    permission: minibosses.command
+permissions:
+  minibosses.command:
+    description: ""
+    default: op

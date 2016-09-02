@@ -2,8 +2,11 @@
 Adds very customisable Bosses
 # Commands
 Create and spawn boss: /minibosses create network-id/entityType Name
+
 Spawn boss: /minibosses spawn Name
+
 Remove boss: /minibosses delete Name
+
 List bosses in the config: /minibosses list
 
 #Supported Entities

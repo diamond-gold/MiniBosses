@@ -71,21 +71,24 @@ class Main extends PluginBase implements Listener{
 	}
 	
 	public function onCommand(CommandSender $sender, Command $cmd, $label, array $args){
-		if($args[0] === "create"){
+		if(!isset($args[0])){
+			$sender->sendMessage("Usage: /minibosses create/spawn/delete/list");
+		}elseif($args[0] === "create"){
 			if(!($sender instanceof Player)) $sender->sendMessage("Please run in-game");
 			elseif(count($args) >= 3){
-				$networkid = (int)$args[1];
+				$networkid = $args[1];
 				array_shift($args);
 				array_shift($args);
 				$name = implode(' ',$args);
 				if($this->data->get($name,null) === null){
 					if(($search = array_search($networkid,self::NetworkIds,true)) === false && !isset(self::NetworkIds[strtolower($networkid)])){
-						$sender->sendMessage("Unrecognised Network ID or Entity type");
+						$sender->sendMessage("Unrecognised Network ID or Entity type $networkid");
+						return true;
 					}else{
 						if($search === false) $networkid = self::NetworkIds[strtolower($networkid)];
 					}
 					$heldItem = $sender->getInventory()->getItemInHand();
-					$this->data->set($name,array("network-id" => $networkid,"x"=>$sender->x,"y"=>$sender->y,"z"=>$sender->z,"level"=>$sender->level->getName(),"health"=>20,"range"=>10,"attackDamage"=>1,"attackRate"=>10,"speed"=>1,"drops"=>"1;2;3","respawnTime"=>100,"skin"=>bin2hex($sender->getSkinData()),"heldItem"=>$heldItem->getId().";".$heldItem->getDamage().";".$heldItem->getCount().";".$heldItem->getCompoundTag()));
+					$this->data->set($name,array("network-id" => $networkid,"x"=>$sender->x,"y"=>$sender->y,"z"=>$sender->z,"level"=>$sender->level->getName(),"health"=>20,"range"=>10,"attackDamage"=>1,"attackRate"=>10,"speed"=>1,"drops"=>"1;2;3 4;5;6 7;8;9","respawnTime"=>100,"skin"=>($networkid === 63 ? bin2hex($sender->getSkinData()) : ""),"heldItem"=>($networkid === 63 ? $heldItem->getId().";".$heldItem->getDamage().";".$heldItem->getCount().";" : "")));
 					$this->data->save();
 					$this->spawnBoss($name);
 					$sender->sendMessage("Successfully created $name");
@@ -118,6 +121,8 @@ class Main extends PluginBase implements Listener{
 		}elseif($args[0] === "list"){
 			$sender->sendMessage("----MiniBosses----");
 			$sender->sendMessage(implode(', ',array_keys($this->data->getAll())));
+		}else{
+			$sender->sendMessage("Usage: /minibosses create/spawn/delete/list");
 		}
 		return true;
 	}
@@ -134,8 +139,8 @@ class Main extends PluginBase implements Listener{
 		$speed = $data["speed"];
 		$drops = $data["drops"];
 		$respawnTime = $data["respawnTime"];
-		$skin = $data["skin"];
-		$heldItem = $data["heldItem"];
+		$skin = ($networkId === 63 ? $data["skin"] : "");
+		$heldItem = ($networkId === 63 ? $data["heldItem"] : "");
 		$nbt = new CompoundTag("", [
             "Pos" => new ListTag("Pos", [
                 new DoubleTag("", $pos->x),

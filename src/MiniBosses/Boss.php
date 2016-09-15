@@ -54,9 +54,13 @@ class Boss extends Creature{
 	}
 	
 	public function initEntity(){
+		$this->plugin = $this->server->getPluginManager()->getPlugin("MiniBosses");
+		if(!$this->plugin->data->get($this->getNameTag())){
+			$this->close();
+			return;
+		}
         parent::initEntity();
         $this->dataProperties[self::DATA_NO_AI] = [self::DATA_TYPE_BYTE, 1];
-		$this->plugin = $this->server->getPluginManager()->getPlugin("MiniBosses");
 		if(isset($this->namedtag->maxHealth)){
 			parent::setMaxHealth($this->namedtag["maxHealth"]);
 			$this->setHealth($this->namedtag["maxHealth"]);

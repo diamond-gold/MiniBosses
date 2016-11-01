@@ -99,8 +99,9 @@ class Main extends PluginBase implements Listener{
 				array_shift($args);
 				$name = implode(' ',$args);
 				if($this->data->get($name,null) !== null){
-					$this->spawnBoss($name);
-					$sender->sendMessage("Successfully spawned $name");
+					$ret = $this->spawnBoss($name);
+					if($ret === true) $sender->sendMessage("Successfully spawned $name");
+					else $sender->sendMessage("Error spawning $name : $ret");
 				}else $sender->sendMessage("Not exist");
 			}else $sender->sendMessage("Usage: /minibosses spawn name");
 		}elseif($args[0] === "delete"){
@@ -129,7 +130,9 @@ class Main extends PluginBase implements Listener{
 	
 	public function spawnBoss(string $name = "Boss"){
 		$data = $this->data->get($name);
-		if(!$data || !$this->getServer()->getLevelByName($data["level"])) return false;
+		if(!$data) return "No data, Boss does not exist";
+		elseif(!$this->getServer()->getLevelByName($data["level"]) && !$this->getServer()->loadLevel($data["level"]))
+			return "Failed to load Level {$data["level"]}";
 		$networkId = $data["network-id"];
 		$pos = new Position($data["x"],$data["y"],$data["z"],$this->getServer()->getLevelByName($data["level"]));
 		$health = $data["health"];

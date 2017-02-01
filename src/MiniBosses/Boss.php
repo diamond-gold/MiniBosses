@@ -33,6 +33,7 @@ class Boss extends Creature{
 	public $heldItem;
 	public $range;
 	public $knockbackTicks = 0;
+	public $scale;
 	const NETWORK_ID = 1000;
 	
 	public function __construct($chunk,$nbt){
@@ -43,6 +44,7 @@ class Boss extends Creature{
 		$this->attackDamage = $this->namedtag["attackDamage"];
 		$this->attackRate = $this->namedtag["attackRate"];
 		$this->speed = $this->namedtag["speed"];
+		$this->scale = $this->namedtag["scale"];
 		if($this->namedtag["drops"] !== ""){
 			foreach(explode(' ',$this->namedtag["drops"]) as $item){
 				$item = explode(';',$item);
@@ -61,6 +63,7 @@ class Boss extends Creature{
 		$this->plugin = $this->server->getPluginManager()->getPlugin("MiniBosses");
         parent::initEntity();
         $this->dataProperties[self::DATA_FLAG_NO_AI] = [self::DATA_TYPE_BYTE, 1];
+        $this->dataProperties[self::DATA_SCALE] = [self::DATA_TYPE_INT, $this->namedtag["scale"]];
 		if(isset($this->namedtag->maxHealth)){
 			parent::setMaxHealth($this->namedtag["maxHealth"]);
 			$this->setHealth($this->namedtag["maxHealth"]);
@@ -133,7 +136,8 @@ class Boss extends Creature{
 		$this->namedtag->respawnTime = new IntTag("respawnTime",$this->respawnTime);
 		$this->namedtag->skin = new StringTag("skin",$this->skin);
 		$this->namedtag->heldItem = new StringTag("heldItem",($this->heldItem instanceof Item ? $this->heldItem->getId().";".$this->heldItem->getDamage().";".$this->heldItem->getCount().";".$this->heldItem->getCompoundTag() : ""));
-    }
+		$this->namedtag->scale = new IntTag("scale", $this->scale);
+	}
 	
 	public function onUpdate($currentTick){
 		if($this->knockbackTicks > 0) $this->knockbackTicks--;
@@ -170,7 +174,7 @@ class Boss extends Creature{
 					}
 					$this->pitch = rad2deg(atan(-$y));
 					$this->move($this->motionX, $this->motionY, $this->motionZ);
-					if($this->distanceSquared($this->target) < 1 && $this->attackDelay++ > $this->attackRate){
+					if($this->distanceSquared($this->target) < $this->scale && $this->attackDelay++ > $this->attackRate){
 						$this->attackDelay = 0;
 						$ev = new EntityDamageByEntityEvent($this, $this->target, EntityDamageEvent::CAUSE_ENTITY_ATTACK, $this->attackDamage);
 						$player->attack($ev->getFinalDamage(), $ev);

@@ -2,7 +2,7 @@ name: MiniBosses
 main: MiniBosses\Main
 description: Adds very customisable Bosses
 version: 1.0.0
-api: 1.0.0
+api: [2.1.0, 3.0.0-ALPHA3]
 load: POSTWORLD
 author: ace
 commands:
@@ -12,5 +12,5 @@ commands:
     permission: minibosses.command
 permissions:
   minibosses.command:
-    description: ""
+    description: "Allows usage of the minibosses command."
     default: op

@@ -27,7 +27,7 @@ class Boss extends Creature{
 	public $attackRate = 10;
 	public $attackDelay = 0;
 	public $speed;
-	public $drops;
+	public $drops = array();
 	public $respawnTime;
 	public $skin;
 	public $heldItem;
@@ -37,26 +37,30 @@ class Boss extends Creature{
 	
 	public function __construct($chunk,$nbt){
 		parent::__construct($chunk,$nbt);
-		$this->networkId = $this->namedtag["networkId"];
+		$this->networkId = (int)$this->namedtag["networkId"];
 		$this->range = $this->namedtag["range"];
 		$this->spawnPos = new Position($this->namedtag["spawnPos"][0],$this->namedtag["spawnPos"][1],$this->namedtag["spawnPos"][2],$this->level);
 		$this->attackDamage = $this->namedtag["attackDamage"];
 		$this->attackRate = $this->namedtag["attackRate"];
 		$this->speed = $this->namedtag["speed"];
-		foreach(explode(' ',$this->namedtag["drops"]) as $item){
-			$item = explode(';',$item);
-			$this->drops[] = Item::get($item[0],isset($item[1]) ? $item[1] : 0,isset($item[2]) ? $item[2] : 1,isset($item[3]) ? $item[3] : "");
+		if($this->namedtag["drops"] !== ""){
+			foreach(explode(' ',$this->namedtag["drops"]) as $item){
+				$item = explode(';',$item);
+				$this->drops[] = Item::get($item[0],isset($item[1]) ? $item[1] : 0,isset($item[2]) ? $item[2] : 1,isset($item[3]) ? $item[3] : "");#todo: compound tag
+			}
 		}
 		$this->respawnTime = $this->namedtag["respawnTime"];
 		$this->skin = $this->namedtag["skin"];
-		$heldItem = explode(';',$this->namedtag["heldItem"]);
-		$this->heldItem = Item::get($heldItem[0],isset($heldItem[1]) ? $heldItem[1] : 0,isset($heldItem[2]) ? $heldItem[2] : 1,isset($heldItem[3]) ? $heldItem[3] : "");
+		if($this->namedtag["heldItem"] !== ""){
+			$heldItem = explode(';',$this->namedtag["heldItem"]);
+			$this->heldItem = Item::get($heldItem[0],isset($heldItem[1]) ? $heldItem[1] : 0,isset($heldItem[2]) ? $heldItem[2] : 1,isset($heldItem[3]) ? $heldItem[3] : "");#todo: compound tag
+		}else $this->heldItem = Item::get(0);
 	}
 	
 	public function initEntity(){
 		$this->plugin = $this->server->getPluginManager()->getPlugin("MiniBosses");
         parent::initEntity();
-        //$this->dataProperties[self::DATA_NO_AI] = [self::DATA_TYPE_BYTE, 1];
+        $this->dataProperties[self::DATA_FLAG_NO_AI] = [self::DATA_TYPE_BYTE, 1];
 		if(isset($this->namedtag->maxHealth)){
 			parent::setMaxHealth($this->namedtag["maxHealth"]);
 			$this->setHealth($this->namedtag["maxHealth"]);
@@ -161,6 +165,9 @@ class Boss extends Creature{
 						$this->motionZ = $this->speed * 0.15 * ($z / $diff);
 					}
 					$this->yaw = rad2deg(atan2(-$x,$z));
+					if($this->networkId === 53){#enderdragon
+						$this->yaw+=180;
+					}
 					$this->pitch = rad2deg(atan(-$y));
 					$this->move($this->motionX, $this->motionY, $this->motionZ);
 					if($this->distanceSquared($this->target) < 1 && $this->attackDelay++ > $this->attackRate){

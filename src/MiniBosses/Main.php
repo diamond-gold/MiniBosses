@@ -54,6 +54,7 @@ class Main extends PluginBase implements Listener{
 							"enderman"=>38,
 							"silverfish"=>39,
 							"cavespider"=>40,
+							#"ghast"=>41, todo: cant hit
 							"magmacube"=>42,
 							"blaze"=>43,
 							"zombievillager"=>44,
@@ -61,6 +62,12 @@ class Main extends PluginBase implements Listener{
 							"stray"=>46,
 							"husk"=>47,
 							"witherskeleton"=>48,
+							#"guardian"=>49, todo: find out data tag for shooting laser, now always shooting
+							#"elderguardian"=>50,
+							"wither"=>52,
+							"enderdragon"=>53,
+							"shulker"=>54,
+							"endermite"=>55,
 							"human"=>63);
 
 	public function onEnable(){
@@ -81,14 +88,14 @@ class Main extends PluginBase implements Listener{
 				array_shift($args);
 				$name = implode(' ',$args);
 				if($this->data->get($name,null) === null){
-					if(($search = array_search($networkid,self::NetworkIds,true)) === false && !isset(self::NetworkIds[strtolower($networkid)])){
+					if(($search = array_search((int)$networkid,self::NetworkIds,true)) === false && !isset(self::NetworkIds[strtolower($networkid)])){
 						$sender->sendMessage("Unrecognised Network ID or Entity type $networkid");
 						return true;
 					}else{
 						if($search === false) $networkid = self::NetworkIds[strtolower($networkid)];
 					}
 					$heldItem = $sender->getInventory()->getItemInHand();
-					$this->data->set($name,array("network-id" => $networkid,"x"=>$sender->x,"y"=>$sender->y,"z"=>$sender->z,"level"=>$sender->level->getName(),"health"=>20,"range"=>10,"attackDamage"=>1,"attackRate"=>10,"speed"=>1,"drops"=>"1;2;3 4;5;6 7;8;9","respawnTime"=>100,"skin"=>($networkid === 63 ? bin2hex($sender->getSkinData()) : ""),"heldItem"=>($networkid === 63 ? $heldItem->getId().";".$heldItem->getDamage().";".$heldItem->getCount().";" : "")));
+					$this->data->set($name,array("network-id" => (int)$networkid,"x"=>$sender->x,"y"=>$sender->y,"z"=>$sender->z,"level"=>$sender->level->getName(),"health"=>20,"range"=>10,"attackDamage"=>1,"attackRate"=>10,"speed"=>1,"drops"=>"1;2;3 4;5;6 7;8;9","respawnTime"=>100,"skin"=>($networkid === 63 ? bin2hex($sender->getSkinData()) : ""),"heldItem"=>($networkid === 63 ? $heldItem->getId().";".$heldItem->getDamage().";".$heldItem->getCount().";" : "")));
 					$this->data->save();
 					$this->spawnBoss($name);
 					$sender->sendMessage("Successfully created $name");
@@ -133,7 +140,7 @@ class Main extends PluginBase implements Listener{
 		if(!$data) return "No data, Boss does not exist";
 		elseif(!$this->getServer()->getLevelByName($data["level"]) && !$this->getServer()->loadLevel($data["level"]))
 			return "Failed to load Level {$data["level"]}";
-		$networkId = $data["network-id"];
+		$networkId = (int)$data["network-id"];
 		$pos = new Position($data["x"],$data["y"],$data["z"],$this->getServer()->getLevelByName($data["level"]));
 		$health = $data["health"];
 		$range = $data["health"];
@@ -178,6 +185,8 @@ class Main extends PluginBase implements Listener{
 		$ent->setMaxHealth($health);
 		$ent->setHealth($health);
 		$ent->setNameTag($name);
+		$ent->setNameTagAlwaysVisible(true);
+		$ent->setNameTagVisible(true);
 		$ent->spawnToAll();
 		return true;
 	}

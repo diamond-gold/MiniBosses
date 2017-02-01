@@ -44,7 +44,7 @@ class Boss extends Creature{
 		$this->attackDamage = $this->namedtag["attackDamage"];
 		$this->attackRate = $this->namedtag["attackRate"];
 		$this->speed = $this->namedtag["speed"];
-		$this->scale = $this->namedtag["scale"];
+		$this->scale = $this->namedtag["scale"] ?? 1;
 		if($this->namedtag["drops"] !== ""){
 			foreach(explode(' ',$this->namedtag["drops"]) as $item){
 				$item = explode(';',$item);
@@ -63,7 +63,7 @@ class Boss extends Creature{
 		$this->plugin = $this->server->getPluginManager()->getPlugin("MiniBosses");
         parent::initEntity();
         $this->dataProperties[self::DATA_FLAG_NO_AI] = [self::DATA_TYPE_BYTE, 1];
-        $this->dataProperties[self::DATA_SCALE] = [self::DATA_TYPE_INT, $this->namedtag["scale"]];
+        $this->dataProperties[self::DATA_SCALE] = [self::DATA_TYPE_FLOAT, $this->namedtag["scale"]];
 		if(isset($this->namedtag->maxHealth)){
 			parent::setMaxHealth($this->namedtag["maxHealth"]);
 			$this->setHealth($this->namedtag["maxHealth"]);
@@ -173,7 +173,7 @@ class Boss extends Creature{
 						$this->yaw+=180;
 					}
 					$this->pitch = rad2deg(atan(-$y));
-					$this->move($this->motionX, $this->motionY, $this->motionZ);
+					#$this->move($this->motionX, $this->motionY, $this->motionZ);
 					if($this->distanceSquared($this->target) < $this->scale && $this->attackDelay++ > $this->attackRate){
 						$this->attackDelay = 0;
 						$ev = new EntityDamageByEntityEvent($this, $this->target, EntityDamageEvent::CAUSE_ENTITY_ATTACK, $this->attackDamage);

@@ -154,7 +154,7 @@ class Main extends PluginBase implements Listener{
 		$respawnTime = $data["respawnTime"];
 		$skin = ($networkId === 63 ? $data["skin"] : "");
 		$heldItem = ($networkId === 63 ? $data["heldItem"] : "");
-		$scale = $data["scale"];
+		$scale = $data["scale"] ?? 1;
 		$nbt = new CompoundTag("", [
             "Pos" => new ListTag("Pos", [
                 new DoubleTag("", $pos->x),

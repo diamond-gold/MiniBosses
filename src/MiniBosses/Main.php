@@ -55,7 +55,7 @@ class Main extends PluginBase implements Listener{
 							"enderman"=>38,
 							"silverfish"=>39,
 							"cavespider"=>40,
-							#"ghast"=>41, todo: cant hit
+							"ghast"=>41,
 							"magmacube"=>42,
 							"blaze"=>43,
 							"zombievillager"=>44,
@@ -141,10 +141,10 @@ class Main extends PluginBase implements Listener{
 	public function spawnBoss(string $name = "Boss"){
 		$data = $this->data->get($name);
 		if(!$data) return "No data, Boss does not exist";
-		elseif(!$this->getServer()->getLevelByName($data["level"]) && !$this->getServer()->loadLevel($data["level"]))
+		elseif(!($level = $this->getServer()->getLevelByName($data["level"])) && !$this->getServer()->loadLevel($data["level"]))
 			return "Failed to load Level {$data["level"]}";
 		$networkId = (int)$data["network-id"];
-		$pos = new Position($data["x"],$data["y"],$data["z"],$this->getServer()->getLevelByName($data["level"]));
+		$pos = new Position($data["x"],$data["y"],$data["z"],$level);
 		$health = $data["health"];
 		$range = $data["health"];
 		$attackDamage = $data["attackDamage"];

@@ -98,7 +98,11 @@ class Main extends PluginBase implements Listener{
 						return true;
 					}
 					$heldItem = $sender->getInventory()->getItemInHand();
-					$this->data->set($name,array("network-id" => (int)$networkid,"x"=>$sender->x,"y"=>$sender->y,"z"=>$sender->z,"level"=>$sender->level->getName(),"health"=>20,"range"=>10,"attackDamage"=>1,"attackRate"=>10,"speed"=>1,"drops"=>"1;2;3 4;5;6 7;8;9","respawnTime"=>100,"skin"=>($networkid === 63 ? bin2hex($sender->getSkinData()) : ""),"heldItem"=>($networkid === 63 ? $heldItem->getId().";".$heldItem->getDamage().";".$heldItem->getCount().";" : ""), "scale"=>1));
+					if($heldItem->getNamedTag()){
+						$nbt = new NBT(NBT::LITTLE_ENDIAN);
+						$nbt->setData($heldItem->getNamedTag());
+					}
+					$this->data->set($name,array("network-id" => (int)$networkid,"x"=>$sender->x,"y"=>$sender->y,"z"=>$sender->z,"level"=>$sender->level->getName(),"health"=>20,"range"=>10,"attackDamage"=>1,"attackRate"=>10,"speed"=>1,"drops"=>"1;2;3 4;5;6 7;8;9","respawnTime"=>100,"skin"=>($networkid === 63 ? bin2hex($sender->getSkinData()) : ""),"heldItem"=>($heldItem->getId().";".$heldItem->getDamage().";".$heldItem->getCount().";".(isset($nbt) ? $nbt->write():"")), "scale"=>1));
 					$this->data->save();
 					$this->spawnBoss($name);
 					$sender->sendMessage(TF::GREEN . "Successfully created MiniBoss: $name");
@@ -153,7 +157,7 @@ class Main extends PluginBase implements Listener{
 		$drops = $data["drops"];
 		$respawnTime = $data["respawnTime"];
 		$skin = ($networkId === 63 ? $data["skin"] : "");
-		$heldItem = ($networkId === 63 ? $data["heldItem"] : "");
+		$heldItem = $data["heldItem"];
 		$scale = $data["scale"] ?? 1;
 		$nbt = new CompoundTag("", [
             "Pos" => new ListTag("Pos", [

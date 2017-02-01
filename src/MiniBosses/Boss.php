@@ -17,6 +17,7 @@ use pocketmine\level\Position;
 use pocketmine\item\Item;
 use pocketmine\network\protocol\AddEntityPacket;
 use pocketmine\network\protocol\AddPlayerPacket;
+use pocketmine\network\protocol\MobEquipmentPacket;
 
 class Boss extends Creature{
 	
@@ -109,6 +110,14 @@ class Boss extends Creature{
 			$pk->pitch = $this->pitch;
 			$pk->metadata = $this->dataProperties;
 			$player->dataPacket($pk);
+			if($this->heldItem->getId() > 0){
+				$pk = new MobEquipmentPacket();
+				$pk->eid = $this->getId();
+				$pk->item = $this->heldItem;
+				$pk->slot = 0;
+				$pk->selectedSlot = 0;
+				$player->dataPacket($pk);
+			}
 		}
 	}
 	

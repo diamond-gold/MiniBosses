@@ -174,7 +174,7 @@ class Boss extends Creature{
 					}
 					$this->pitch = rad2deg(atan(-$y));
 					$this->move($this->motionX, $this->motionY, $this->motionZ);
-					if($this->distanceSquared($this->target) < $this->namedtag["scale"] && $this->attackDelay++ > $this->attackRate){
+					if($this->distanceSquared($this->target) < $this->scale && $this->attackDelay++ > $this->attackRate){
 						$this->attackDelay = 0;
 						$ev = new EntityDamageByEntityEvent($this, $this->target, EntityDamageEvent::CAUSE_ENTITY_ATTACK, $this->attackDamage);
 						$player->attack($ev->getFinalDamage(), $ev);

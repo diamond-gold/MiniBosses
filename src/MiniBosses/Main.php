@@ -6,7 +6,7 @@ use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\level\Level;
 use pocketmine\scheduler\PluginTask;
-use pocketmine\utils\TextFormat;
+use pocketmine\utils\TextFormat as TF;
 use pocketmine\event\Listener;
 use pocketmine\utils\Config;
 use pocketmine\entity\Effect;
@@ -27,6 +27,7 @@ use pocketmine\command\CommandSender;
 
 class Main extends PluginBase implements Listener{
 	
+	public $data;
 	const NetworkIds = array("chicken"=>10,
 							"cow"=>11,
 							"pig"=>12,
@@ -88,19 +89,21 @@ class Main extends PluginBase implements Listener{
 				array_shift($args);
 				$name = implode(' ',$args);
 				if($this->data->get($name,null) === null){
-					if(($search = array_search((int)$networkid,self::NetworkIds,true)) === false && !isset(self::NetworkIds[strtolower($networkid)])){
-						$sender->sendMessage("Unrecognised Network ID or Entity type $networkid");
+					if(is_numeric($networkid) && in_array($networkid, self::NetworkIds)){
+						// Do absolutely nothing.
+					}elseif(!is_numeric($networkid) && array_key_exists($networkid, self::NetworkIds)){
+						$networkid = self::NetworkIds[strtolower($networkid)];
+					}else {
+						$sender->sendMessage(TF::RED . "Unrecognised Network ID or Entity type $networkid");
 						return true;
-					}else{
-						if($search === false) $networkid = self::NetworkIds[strtolower($networkid)];
 					}
 					$heldItem = $sender->getInventory()->getItemInHand();
-					$this->data->set($name,array("network-id" => (int)$networkid,"x"=>$sender->x,"y"=>$sender->y,"z"=>$sender->z,"level"=>$sender->level->getName(),"health"=>20,"range"=>10,"attackDamage"=>1,"attackRate"=>10,"speed"=>1,"drops"=>"1;2;3 4;5;6 7;8;9","respawnTime"=>100,"skin"=>($networkid === 63 ? bin2hex($sender->getSkinData()) : ""),"heldItem"=>($networkid === 63 ? $heldItem->getId().";".$heldItem->getDamage().";".$heldItem->getCount().";" : "")));
+					$this->data->set($name,array("network-id" => (int)$networkid,"x"=>$sender->x,"y"=>$sender->y,"z"=>$sender->z,"level"=>$sender->level->getName(),"health"=>20,"range"=>10,"attackDamage"=>1,"attackRate"=>10,"speed"=>1,"drops"=>"1;2;3 4;5;6 7;8;9","respawnTime"=>100,"skin"=>($networkid === 63 ? bin2hex($sender->getSkinData()) : ""),"heldItem"=>($networkid === 63 ? $heldItem->getId().";".$heldItem->getDamage().";".$heldItem->getCount().";" : ""), "scale"=>1));
 					$this->data->save();
 					$this->spawnBoss($name);
-					$sender->sendMessage("Successfully created $name");
-				}else $sender->sendMessage("Already exists");
-			}else $sender->sendMessage("Usage: /minibosses create network-id name");
+					$sender->sendMessage(TF::GREEN . "Successfully created MiniBoss: $name");
+				}else $sender->sendMessage(TF::RED . "That MiniBoss already exists!");
+			}else $sender->sendMessage(TF::RED . "Usage: /minibosses create network-id name");
 		}elseif($args[0] === "spawn"){
 			if(count($args) >= 2){
 				array_shift($args);
@@ -108,9 +111,9 @@ class Main extends PluginBase implements Listener{
 				if($this->data->get($name,null) !== null){
 					$ret = $this->spawnBoss($name);
 					if($ret === true) $sender->sendMessage("Successfully spawned $name");
-					else $sender->sendMessage("Error spawning $name : $ret");
-				}else $sender->sendMessage("Not exist");
-			}else $sender->sendMessage("Usage: /minibosses spawn name");
+					else $sender->sendMessage(TF::RED . "Error spawning $name : $ret");
+				}else $sender->sendMessage(TF::RED . "That MiniBoss doesn't exist!");
+			}else $sender->sendMessage(TF::RED . "Usage: /minibosses spawn name");
 		}elseif($args[0] === "delete"){
 			if(count($args) >= 2){
 				array_shift($args);
@@ -118,19 +121,19 @@ class Main extends PluginBase implements Listener{
 				if($this->data->get($name,null) !== null){
 					$this->data->remove($name);
 					$this->data->save();
-					$sender->sendMessage("Successfully removed $name");
+					$sender->sendMessage(TF::GREEN . "Successfully removed MiniBoss: $name");
 					foreach($this->getServer()->getLevels() as $l){
 						foreach($l->getEntities() as $e){
 							if($e instanceof Boss && $e->getNameTag() === $name) $e->close();
 						}
 					}
-				}else $sender->sendMessage("Not exist");
-			}else $sender->sendMessage("Usage: /minibosses delete name");
+				}else $sender->sendMessage(TF::RED . "That MiniBoss doesn't exist!");
+			}else $sender->sendMessage(TF::RED . "Usage: /minibosses delete name");
 		}elseif($args[0] === "list"){
-			$sender->sendMessage("----MiniBosses----");
+			$sender->sendMessage(TF::GREEN . "----MiniBosses----");
 			$sender->sendMessage(implode(', ',array_keys($this->data->getAll())));
 		}else{
-			$sender->sendMessage("Usage: /minibosses create/spawn/delete/list");
+			$sender->sendMessage(TF::RED . "Usage: /minibosses create/spawn/delete/list");
 		}
 		return true;
 	}
@@ -151,6 +154,7 @@ class Main extends PluginBase implements Listener{
 		$respawnTime = $data["respawnTime"];
 		$skin = ($networkId === 63 ? $data["skin"] : "");
 		$heldItem = ($networkId === 63 ? $data["heldItem"] : "");
+		$scale = $data["scale"];
 		$nbt = new CompoundTag("", [
             "Pos" => new ListTag("Pos", [
                 new DoubleTag("", $pos->x),
@@ -179,7 +183,8 @@ class Main extends PluginBase implements Listener{
 			"drops" => new StringTag("drops",$drops),
 			"respawnTime" => new IntTag("respawnTime",$respawnTime),
 			"skin" => new StringTag("skin",$skin),
-			"heldItem" => new StringTag("heldItem",$heldItem)
+			"heldItem" => new StringTag("heldItem",$heldItem),
+			"scale" => new IntTag("scale",$scale)
             ]);
 		$ent = Entity::createEntity("Boss",$pos->level->getChunk($pos->x >> 4,$pos->z >> 4,true),$nbt);
 		$ent->setMaxHealth($health);

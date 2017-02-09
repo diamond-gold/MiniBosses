@@ -49,14 +49,14 @@ class Boss extends Creature{
 		if($this->namedtag["drops"] !== ""){
 			foreach(explode(' ',$this->namedtag["drops"]) as $item){
 				$item = explode(';',$item);
-				$this->drops[] = Item::get($item[0],isset($item[1]) ? $item[1] : 0,isset($item[2]) ? $item[2] : 1,isset($item[3]) ? $item[3] : "");#todo: compound tag
+				$this->drops[] = [Item::get($item[0],$item[1] ?? 0,$item[2] ?? 1,$item[3] ?? ""),$item[4] ?? 100];
 			}
 		}
 		$this->respawnTime = $this->namedtag["respawnTime"];
 		$this->skin = $this->namedtag["skin"];
 		if($this->namedtag["heldItem"] !== ""){
 			$heldItem = explode(';',$this->namedtag["heldItem"]);
-			$this->heldItem = Item::get($heldItem[0],isset($heldItem[1]) ? $heldItem[1] : 0,isset($heldItem[2]) ? $heldItem[2] : 1,isset($heldItem[3]) ? $heldItem[3] : "");#todo: compound tag
+			$this->heldItem = Item::get($heldItem[0],$heldItem[1] ?? 0,$heldItem[2] ?? 1,$heldItem[3] ?? "");
 		}else $this->heldItem = Item::get(0);
 	}
 	
@@ -140,7 +140,7 @@ class Boss extends Creature{
 		$this->namedtag->attackRate = new IntTag("attackRate",$this->attackRate);
 		$this->namedtag->speed = new FloatTag("speed",$this->speed);
 		$drops2 = [];
-		foreach($this->drops as $drop) $drops2[] = $drop->getId().";".$drop->getDamage().";".$drop->getCount().";".$drop->getCompoundTag();
+		foreach($this->drops as $drop) $drops2[] = $drop[0]->getId().";".$drop[0]->getDamage().";".$drop[0]->getCount().";".$drop[0]->getCompoundTag().";".$drop[1];
 		$this->namedtag->drops = new StringTag("drops",implode(' ',$drops2));
 		$this->namedtag->respawnTime = new IntTag("respawnTime",$this->respawnTime);
 		$this->namedtag->skin = new StringTag("skin",$this->skin);
@@ -216,6 +216,10 @@ class Boss extends Creature{
 	}
 	
 	public function getDrops(){
-		return $this->drops;
+		$drops = array();
+		foreach($this->drops as $drop){
+			if(mt_rand(1,100) <= $drop[1]) $drops[] = $drop[0];
+		}
+		return $drops;
 	}
 }

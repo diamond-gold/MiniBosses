@@ -122,15 +122,18 @@ class Main extends PluginBase implements Listener{
 			if(count($args) >= 2){
 				array_shift($args);
 				$name = implode($args);
-				if($this->data->get($name,null) !== null){
+				if(($data = $this->data->get($name,null)) !== null){
+					if($this->getServer()->loadLevel($data["level"])){
+						$l = $this->getServer()->getLevelByName($data["level"]);
+						if($chunk = $l->getChunk($data["x"] >> 4,$data["z"] >> 4)){
+							foreach($chunk->getEntities() as $e){
+								if($e instanceof Boss && $e->getNameTag() === $name) $e->close();
+							}
+						}
+					}
 					$this->data->remove($name);
 					$this->data->save();
 					$sender->sendMessage(TF::GREEN . "Successfully removed MiniBoss: $name");
-					foreach($this->getServer()->getLevels() as $l){
-						foreach($l->getEntities() as $e){
-							if($e instanceof Boss && $e->getNameTag() === $name) $e->close();
-						}
-					}
 				}else $sender->sendMessage(TF::RED . "That MiniBoss doesn't exist!");
 			}else $sender->sendMessage(TF::RED . "Usage: /minibosses delete name");
 		}elseif($args[0] === "list"){
@@ -145,10 +148,10 @@ class Main extends PluginBase implements Listener{
 	public function spawnBoss(string $name = "Boss"){
 		$data = $this->data->get($name);
 		if(!$data) return "No data, Boss does not exist";
-		elseif(!($level = $this->getServer()->getLevelByName($data["level"])) && !$this->getServer()->loadLevel($data["level"]))
+		elseif(!$this->getServer()->loadLevel($data["level"]))
 			return "Failed to load Level {$data["level"]}";
 		$networkId = (int)$data["network-id"];
-		$pos = new Position($data["x"],$data["y"],$data["z"],$level);
+		$pos = new Position($data["x"],$data["y"],$data["z"],$this->getServer()->getLevelByName($data["level"]));
 		$health = $data["health"];
 		$range = $data["health"];
 		$attackDamage = $data["attackDamage"];

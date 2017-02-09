@@ -27,7 +27,7 @@ BossName:
   attackDamage: 1 #number of half hearts
   attackRate: 10 #in ticks
   speed: 1
-  drops: 1;0;1;;100 2;0;1;;50 3;0;1;;25 #in the format: ID;Damage:Count;NBT;DropChance(1-100),space separate items
+  drops: 1;0;1;;100 2;0;1;;50 3;0;1;;25 #in the format: ID;Damage;Count;NBT;DropChance(1-100),space separate items
   respawnTime: 100 #in ticks
   skin: "" #in hex, applicable only to human
   heldItem: "276;36;1;\n\x03\0tag\t\x04\0ench\n\x01\0\0\0\x02\x02\0id\x05\0\x02\x03\0lvl\x01\0\0\0"#in the format: ID;Damage;Count;NBT

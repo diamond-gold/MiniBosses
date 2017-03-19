@@ -21,6 +21,9 @@ use pocketmine\network\protocol\MobEquipmentPacket;
 
 class Boss extends Creature{
 	
+	public $height = 1.8;
+	public $width = 0.72;
+	
 	public $networkId = 32;
 	public $target;
 	public $spawnPos;

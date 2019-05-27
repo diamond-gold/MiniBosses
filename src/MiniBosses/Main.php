@@ -2,74 +2,80 @@
 
 namespace MiniBosses;
 
-use pocketmine\Player;
-use pocketmine\plugin\PluginBase;
-use pocketmine\level\Level;
-use pocketmine\scheduler\PluginTask;
-use pocketmine\utils\TextFormat as TF;
-use pocketmine\event\Listener;
-use pocketmine\utils\Config;
-use pocketmine\entity\Effect;
+use pocketmine\command\Command;
+use pocketmine\command\CommandSender;
 use pocketmine\entity\Entity;
+use pocketmine\entity\EntityIds;
+use pocketmine\event\Listener;
+use pocketmine\level\Position;
+use pocketmine\nbt\LittleEndianNBTStream;
+use pocketmine\nbt\tag\ByteArrayTag;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\DoubleTag;
 use pocketmine\nbt\tag\ListTag;
-use pocketmine\nbt\tag\IntTag;
-use pocketmine\nbt\tag\FloatTag;
 use pocketmine\nbt\tag\StringTag;
-use pocketmine\level\Location;
-use pocketmine\level\Position;
-use pocketmine\nbt\NBT;
-use pocketmine\event\player\PlayerInteractEvent;
-use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\command\Command;
-use pocketmine\command\CommandSender;
+use pocketmine\Player;
+use pocketmine\plugin\PluginBase;
+use pocketmine\scheduler\Task;
+use pocketmine\utils\Config;
+use pocketmine\utils\TextFormat as TF;
 
 class Main extends PluginBase implements Listener{
-	
+
+	/** @var Config */
 	public $data;
-	const NetworkIds = array("chicken"=>10,
-							"cow"=>11,
-							"pig"=>12,
-							"sheep"=>13,
-							"wolf"=>14,
-							"villager"=>15,
-							"mooshroom"=>16,
-							"squid"=>17,
-							"rabbit"=>18,
-							"bat"=>19,
-							"irongolem"=>20,
-							"snowgolem"=>21,
-							"ocelot"=>22,
-							"horse"=>23,
-							"donkey"=>24,
-							"mule"=>25,
-							"skeletonhorse"=>26,
-							"zombiehorse"=>27,
-							"zombie"=>32,
-							"creeper"=>33,
-							"skeleton"=>34,
-							"spider"=>35,
-							"pigman"=>36,
-							"slime"=>37,
-							"enderman"=>38,
-							"silverfish"=>39,
-							"cavespider"=>40,
-							"ghast"=>41,
-							"magmacube"=>42,
-							"blaze"=>43,
-							"zombievillager"=>44,
-							"witch"=>45,
-							"stray"=>46,
-							"husk"=>47,
-							"witherskeleton"=>48,
-							#"guardian"=>49, todo: find out data tag for shooting laser, now always shooting
-							#"elderguardian"=>50,
-							"wither"=>52,
-							"enderdragon"=>53,
-							"shulker"=>54,
-							"endermite"=>55,
-							"human"=>63);
+	const NetworkIds = array(
+		"chicken"=>EntityIds::CHICKEN,
+		"cow"=>EntityIds::COW,
+		"pig"=>EntityIds::PIG,
+		"sheep"=>EntityIds::SHEEP,
+		"wolf"=>EntityIds::WOLF,
+		"villager"=>EntityIds::VILLAGER,
+		"mooshroom"=>EntityIds::MOOSHROOM,
+		"squid"=>EntityIds::SQUID,
+		"rabbit"=>EntityIds::RABBIT,
+		"bat"=>EntityIds::BAT,
+		"irongolem"=>EntityIds::IRON_GOLEM,
+		"snowgolem"=>EntityIds::SNOW_GOLEM,
+		"ocelot"=>EntityIds::OCELOT,
+		"horse"=>EntityIds::HORSE,
+		"donkey"=>EntityIds::DONKEY,
+		"mule"=>EntityIds::MULE,
+		"skeletonhorse"=>EntityIds::SKELETON_HORSE,
+		"zombiehorse"=>EntityIds::ZOMBIE_HORSE,
+		"zombie"=>EntityIds::ZOMBIE,
+		"creeper"=>EntityIds::CREEPER,
+		"skeleton"=>EntityIds::SKELETON,
+		"spider"=>EntityIds::SPIDER,
+		"pigman"=>EntityIds::ZOMBIE_PIGMAN,
+		"slime"=>EntityIds::SLIME,
+		"enderman"=>EntityIds::ENDERMAN,
+		"silverfish"=>EntityIds::SILVERFISH,
+		"cavespider"=>EntityIds::CAVE_SPIDER,
+		"ghast"=>EntityIds::GHAST,
+		"magmacube"=>EntityIds::MAGMA_CUBE,
+		"blaze"=>EntityIds::BLAZE,
+		"zombievillager"=>EntityIds::ZOMBIE_VILLAGER,
+		"witch"=>EntityIds::WITCH,
+		"stray"=>EntityIds::STRAY,
+		"husk"=>EntityIds::HUSK,
+		"witherskeleton"=>EntityIds::WITHER_SKELETON,
+		"guardian"=>EntityIds::GUARDIAN,
+		"elderguardian"=>EntityIds::ELDER_GUARDIAN,
+		"wither"=>EntityIds::WITHER,
+		"enderdragon"=>EntityIds::ENDER_DRAGON,
+		"shulker"=>EntityIds::SHULKER,
+		"endermite"=>EntityIds::ENDERMITE,
+		"human"=>EntityIds::PLAYER,
+		"vindicator"=>EntityIds::VINDICATOR,
+		"phantom"=>EntityIds::PHANTOM,
+		"armorstand"=>EntityIds::ARMOR_STAND,
+		"pufferfish"=>EntityIds::PUFFERFISH,
+		"salmon"=>EntityIds::SALMON,
+		"tropicalfish"=>EntityIds::TROPICAL_FISH,
+		"cod"=>EntityIds::COD,
+		"panda"=>EntityIds::PANDA,
+	);
 
 	public function onEnable(){
 		@mkdir($this->getDataFolder());
@@ -78,7 +84,7 @@ class Main extends PluginBase implements Listener{
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
 	}
 	
-	public function onCommand(CommandSender $sender, Command $cmd, $label, array $args){
+	public function onCommand(CommandSender $sender, Command $cmd,string $label, array $args): bool{
 		if(!isset($args[0])){
 			$sender->sendMessage("Usage: /minibosses create/spawn/delete/list");
 		}elseif($args[0] === "create"){
@@ -98,11 +104,15 @@ class Main extends PluginBase implements Listener{
 						return true;
 					}
 					$heldItem = $sender->getInventory()->getItemInHand();
-					if($heldItem->getNamedTag()){
-						$nbt = new NBT(NBT::LITTLE_ENDIAN);
-						$nbt->setData($heldItem->getNamedTag());
-					}
-					$this->data->set($name,array("network-id" => (int)$networkid,"x"=>$sender->x,"y"=>$sender->y,"z"=>$sender->z,"level"=>$sender->level->getName(),"health"=>20,"range"=>10,"attackDamage"=>1,"attackRate"=>10,"speed"=>1,"drops"=>"1;0;1;;100 2;0;1;;50 3;0;1;;25","respawnTime"=>100,"skin"=>($networkid === 63 ? bin2hex($sender->getSkinData()) : ""),"heldItem"=>($heldItem->getId().";".$heldItem->getDamage().";".$heldItem->getCount().";".(isset($nbt) ? $nbt->write():"")), "scale"=>1));
+					$skin = $sender->getSkin();
+					$this->data->set($name,array(
+						"network-id" => (int)$networkid,
+						"x"=>$sender->x,"y"=>$sender->y,"z"=>$sender->z,"level"=>$sender->level->getName(),
+						"health"=>20,"range"=>10,"attackDamage"=>1,"attackRate"=>10,"speed"=>1,
+						"drops"=>"1;0;1;;100 2;0;1;;50 3;0;1;;25","respawnTime"=>100,
+						"skin"=>["Name"=>$skin->getSkinId(),"Data"=>bin2hex($skin->getSkinData()),"CapeData"=>bin2hex($skin->getCapeData()),"GeometryName"=>$skin->getGeometryName(),"GeometryData"=>bin2hex($skin->getGeometryData())],
+						"heldItem"=>($heldItem->getId().";".$heldItem->getDamage().";".$heldItem->getCount().";".(new LittleEndianNBTStream())->write($heldItem->getNamedTag())),
+						"scale"=>1));
 					$this->data->save();
 					$this->spawnBoss($name);
 					$sender->sendMessage(TF::GREEN . "Successfully created MiniBoss: $name");
@@ -145,7 +155,7 @@ class Main extends PluginBase implements Listener{
 		return true;
 	}
 	
-	public function spawnBoss(string $name = "Boss"){
+	public function spawnBoss(string $name){
 		$data = $this->data->get($name);
 		if(!$data) return "No data, Boss does not exist";
 		elseif(!$this->getServer()->loadLevel($data["level"]))
@@ -153,47 +163,36 @@ class Main extends PluginBase implements Listener{
 		$networkId = (int)$data["network-id"];
 		$pos = new Position($data["x"],$data["y"],$data["z"],$this->getServer()->getLevelByName($data["level"]));
 		$health = $data["health"];
-		$range = $data["health"];
-		$attackDamage = $data["attackDamage"];
-		$attackRate = $data["attackRate"];
-		$speed = $data["speed"];
-		$drops = $data["drops"];
-		$respawnTime = $data["respawnTime"];
-		$skin = ($networkId === 63 ? $data["skin"] : "");
-		$heldItem = $data["heldItem"];
-		$scale = $data["scale"] ?? 1;
-		$nbt = new CompoundTag("", [
-            "Pos" => new ListTag("Pos", [
-                new DoubleTag("", $pos->x),
-                new DoubleTag("", $pos->y),
-                new DoubleTag("", $pos->z)
-            ]),
-            "Motion" => new ListTag("Motion", [
-                new DoubleTag("", 0),
-                new DoubleTag("", 0),
-                new DoubleTag("", 0)
-            ]),
-            "Rotation" => new ListTag("Rotation", [
-                new FloatTag("", 0),
-                new FloatTag("", 0)
-            ]),
-			"spawnPos" => new ListTag("spawnPos", [
-                new DoubleTag("", $pos->x),
-                new DoubleTag("", $pos->y),
-                new DoubleTag("", $pos->z)
-            ]),
-			"range" => new FloatTag("range",$range * $range),
-			"attackDamage" => new FloatTag("attackDamage",$attackDamage),
-			"networkId" => new IntTag("networkId",$networkId),
-			"attackRate" => new IntTag("attackRate",$attackRate),
-			"speed" => new FloatTag("speed",$speed),
-			"drops" => new StringTag("drops",$drops),
-			"respawnTime" => new IntTag("respawnTime",$respawnTime),
-			"skin" => new StringTag("skin",$skin),
-			"heldItem" => new StringTag("heldItem",$heldItem),
-			"scale" => new IntTag("scale",$scale)
-            ]);
-		$ent = Entity::createEntity("Boss",$pos->level->getChunk($pos->x >> 4,$pos->z >> 4,true),$nbt);
+		$range = $data["range"];
+		$nbt = Entity::createBaseNBT($pos);
+		$nbt->setTag(new ListTag("spawnPos", [
+			new DoubleTag("", $pos->x),
+			new DoubleTag("", $pos->y),
+			new DoubleTag("", $pos->z)
+		]));
+		$nbt->setFloat("range",$range * $range);
+		$nbt->setFloat("attackDamage",$data["attackDamage"]);
+		$nbt->setInt("networkId",$networkId);
+		$nbt->setInt("attackRate",$data["attackRate"]);
+		$nbt->setFloat("speed",$data["speed"]);
+		$nbt->setString("drops",$data["drops"]);
+		$nbt->setInt("respawnTime",$data["respawnTime"]);
+		if(is_string($data["skin"])){//old data
+			$skin = ($networkId === EntityIds::PLAYER ? $data["skin"] : "");
+			$nbt->setString("skin",$skin);
+		}else{
+			$nbt->setTag(new CompoundTag("Skin", [
+				new StringTag("Name", $data["skin"]["Name"]),
+				new ByteArrayTag("Data",hex2bin($data["skin"]["Data"])),
+				new ByteArrayTag("CapeData", hex2bin($data["skin"]["CapeData"])),
+				new StringTag("GeometryName", $data["skin"]["GeometryName"]),
+				new ByteArrayTag("GeometryData", hex2bin($data["skin"]["GeometryData"]))
+			]));
+		}
+		$nbt->setString("heldItem",$data["heldItem"]);
+		$nbt->setFloat("scale",$data["scale"] ?? 1);
+		$pos->getLevel()->getChunkAtPosition($pos,true);
+		$ent = Entity::createEntity("Boss",$pos->getLevel(),$nbt);
 		$ent->setMaxHealth($health);
 		$ent->setHealth($health);
 		$ent->setNameTag($name);
@@ -203,19 +202,20 @@ class Main extends PluginBase implements Listener{
 		return true;
 	}
 	
-	public function respawn($name,$time){
-		if($this->data->get($name)) $this->getServer()->getScheduler()->scheduleDelayedTask(new RespawnTask($this,$name), $time);
+	public function respawn(string $name,int $time){
+		if($this->data->get($name)) $this->getScheduler()->scheduleDelayedTask(new RespawnTask($this,$name), $time);
 	}
 }
-class RespawnTask extends PluginTask{
-	
+class RespawnTask extends Task{
+
+	private $plugin,$name;
+
 	public function __construct(Main $plugin,$name){
-		parent::__construct($plugin);
 		$this->plugin = $plugin;
 		$this->name = $name;
 	}
 	
-	public function onRun($currentTick){
+	public function onRun(int $currentTick){
 		$this->plugin->spawnBoss($this->name);
 	}
 }

@@ -203,49 +203,55 @@ class Boss extends Creature{
 
 	public function onUpdate(int $currentTick): bool {
 		if($this->knockbackTicks > 0) $this->knockbackTicks--;
-		$player = $this->target;
-		if($player instanceof Living && $player->isAlive()){
-			if($this->distanceSquared($this->spawnPos) > $this->range){
+		if($this->isAlive()){
+			$player = $this->target;
+			if($player instanceof Living && $player->isAlive() && !$player->isClosed()){
+				if($this->distanceSquared($this->spawnPos) > $this->range){
+					$this->setPosition($this->spawnPos);
+					$this->setHealth($this->getMaxHealth());
+					$this->target = null;
+				} else{
+					if(!$this->onGround){
+						if($this->motion->y > -$this->gravity * 4){
+							$this->motion->y = -$this->gravity * 4;
+						} else{
+							$this->motion->y -= $this->gravity;
+						}
+						$this->move($this->motion->x, $this->motion->y, $this->motion->z);
+					} elseif($this->knockbackTicks > 0){
+
+					} else{
+						$x = $player->x - $this->x;
+						$y = $player->y - $this->y;
+						$z = $player->z - $this->z;
+						if($x ** 2 + $z ** 2 < 0.7){
+							$this->motion->x = 0;
+							$this->motion->z = 0;
+						} else{
+							$diff = abs($x) + abs($z);
+							$this->motion->x = $this->speed * 0.15 * ($x / $diff);
+							$this->motion->z = $this->speed * 0.15 * ($z / $diff);
+						}
+						$this->yaw = rad2deg(atan2(-$x, $z));
+						if($this->networkId === EntityIds::ENDER_DRAGON){
+							$this->yaw += 180;
+						}
+						$this->pitch = rad2deg(atan(-$y));
+						$this->move($this->motion->x, $this->motion->y, $this->motion->z);
+						if($this->distanceSquared($this->target) < $this->scale && $this->attackDelay++ > $this->attackRate){
+							$this->attackDelay = 0;
+							$ev = new EntityDamageByEntityEvent($this, $this->target, EntityDamageEvent::CAUSE_ENTITY_ATTACK, $this->attackDamage);
+							$player->attack($ev);
+						}
+					}
+				}
+			}else{
 				$this->setPosition($this->spawnPos);
 				$this->setHealth($this->getMaxHealth());
 				$this->target = null;
-			}else{
-				if(!$this->onGround){
-					if($this->motion->y > -$this->gravity * 4){
-						$this->motion->y = -$this->gravity * 4;
-					}else{
-						$this->motion->y -= $this->gravity;
-					}
-					$this->move($this->motion->x, $this->motion->y, $this->motion->z);
-				}elseif($this->knockbackTicks > 0){
-
-				}else{
-					$x = $player-> x - $this->x;
-					$y = $player-> y - $this->y;
-					$z = $player-> z - $this->z;
-					if($x ** 2 + $z ** 2 < 0.7){
-						$this->motion->x = 0;
-						$this->motion->z = 0;
-					}else{
-						$diff = abs($x) + abs($z);
-						$this->motion->x = $this->speed * 0.15 * ($x / $diff);
-						$this->motion->z = $this->speed * 0.15 * ($z / $diff);
-					}
-					$this->yaw = rad2deg(atan2(-$x,$z));
-					if($this->networkId === EntityIds::ENDER_DRAGON){
-						$this->yaw+=180;
-					}
-					$this->pitch = rad2deg(atan(-$y));
-					$this->move($this->motion->x, $this->motion->y, $this->motion->z);
-					if($this->distanceSquared($this->target) < $this->scale && $this->attackDelay++ > $this->attackRate){
-						$this->attackDelay = 0;
-						$ev = new EntityDamageByEntityEvent($this, $this->target, EntityDamageEvent::CAUSE_ENTITY_ATTACK, $this->attackDamage);
-						$player->attack($ev);
-					}
-				}
 			}
+			$this->updateMovement();
 		}
-		$this->updateMovement();
 		parent::onUpdate($currentTick);
 		return !$this->closed;
 	}

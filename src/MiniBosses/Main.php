@@ -112,7 +112,7 @@ class Main extends PluginBase implements Listener{
 						"drops"=>"1;0;1;;100 2;0;1;;50 3;0;1;;25","respawnTime"=>100,
 						"skin"=>["Name"=>$skin->getSkinId(),"Data"=>bin2hex($skin->getSkinData()),"CapeData"=>bin2hex($skin->getCapeData()),"GeometryName"=>$skin->getGeometryName(),"GeometryData"=>bin2hex($skin->getGeometryData())],
 						"heldItem"=>($heldItem->getId().";".$heldItem->getDamage().";".$heldItem->getCount().";".(new LittleEndianNBTStream())->write($heldItem->getNamedTag())),
-						"scale"=>1));
+						"scale"=>1,"autoAttack"=>false));
 					$this->data->save();
 					$this->spawnBoss($name);
 					$sender->sendMessage(TF::GREEN . "Successfully created MiniBoss: $name");
@@ -191,6 +191,7 @@ class Main extends PluginBase implements Listener{
 		}
 		$nbt->setString("heldItem",$data["heldItem"]);
 		$nbt->setFloat("scale",$data["scale"] ?? 1);
+		$nbt->setByte("autoAttack",$data["autoAttack"]??false);
 		$pos->getLevel()->getChunkAtPosition($pos,true);
 		$ent = Entity::createEntity("Boss",$pos->getLevel(),$nbt);
 		$ent->setMaxHealth($health);

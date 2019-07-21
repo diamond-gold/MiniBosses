@@ -46,6 +46,7 @@ class Boss extends Creature{
 	public $skin;
 	/** @var Item  */
 	public $heldItem;
+	public $autoAttack;
 
 	public function __construct(Level $level,CompoundTag $nbt){
 		$this->scale = $nbt->getFloat("scale",1);
@@ -76,6 +77,7 @@ class Boss extends Creature{
 			$this->skin = self::deserializeSkinNBT($nbt);
 			$this->baseOffset = 1.62;
 		}
+		$this->autoAttack = $nbt->getByte("autoAttack",false);
 		parent::__construct($level,$nbt);
 	}
 
@@ -200,12 +202,23 @@ class Boss extends Creature{
 		$this->namedtag->removeTag("skin");//old data
 		$this->namedtag->setString("heldItem",($this->heldItem instanceof Item ? $this->heldItem->getId().";".$this->heldItem->getDamage().";".$this->heldItem->getCount().";".(new LittleEndianNBTStream())->write($this->heldItem->getNamedTag()) : ""));
 		$this->namedtag->setFloat("scale", $this->scale);
+		$this->namedtag->setByte("autoAttack",$this->autoAttack);
 	}
 
 	public function onUpdate(int $currentTick): bool {
 		if($this->knockbackTicks > 0) $this->knockbackTicks--;
 		if($this->isAlive()){
 			$player = $this->target;
+			if(!$player instanceof Living && $this->autoAttack){
+				$dist = $this->range;
+				foreach($this->level->getPlayers() as $entity){
+					if(($d = $entity->distanceSquared($this)) < $dist){
+						$player = $entity;
+						$dist = $d;
+					}
+				}
+				$this->target = $player;
+			}
 			if($player instanceof Living && $player->isAlive() && !$player->isClosed()){
 				if($this->distanceSquared($this->spawnPos) > $this->range){
 					$this->setPosition($this->spawnPos);
@@ -239,9 +252,9 @@ class Boss extends Creature{
 						}
 						$this->pitch = rad2deg(atan(-$y));
 						$this->move($this->motion->x, $this->motion->y, $this->motion->z);
-						if($this->distanceSquared($this->target) < $this->scale && $this->attackDelay++ > $this->attackRate){
+						if($this->distanceSquared($player) < $this->scale && $this->attackDelay++ > $this->attackRate){
 							$this->attackDelay = 0;
-							$ev = new EntityDamageByEntityEvent($this, $this->target, EntityDamageEvent::CAUSE_ENTITY_ATTACK, $this->attackDamage);
+							$ev = new EntityDamageByEntityEvent($this, $player, EntityDamageEvent::CAUSE_ENTITY_ATTACK, $this->attackDamage);
 							$player->attack($ev);
 						}
 					}

@@ -38,4 +38,5 @@ BossName:
     GeometryData: #geometry hex
   heldItem: "276;36;1;\n\x03\0tag\t\x04\0ench\n\x01\0\0\0\x02\x02\0id\x05\0\x02\x03\0lvl\x01\0\0\0"#in the format: ID;Damage;Count;NBT
   scale: 1
+  autoAttack: false#auto attack players when they are in range
 ```

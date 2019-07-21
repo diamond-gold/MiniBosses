@@ -2,6 +2,7 @@
 
 namespace MiniBosses;
 
+use InvalidArgumentException;
 use pocketmine\entity\Creature;
 use pocketmine\entity\EntityIds;
 use pocketmine\entity\Living;
@@ -18,7 +19,7 @@ use pocketmine\nbt\tag\DoubleTag;
 use pocketmine\nbt\tag\IntTag;
 use pocketmine\nbt\tag\ListTag;
 use pocketmine\nbt\tag\StringTag;
-use pocketmine\network\mcpe\protocol\AddEntityPacket;
+use pocketmine\network\mcpe\protocol\AddActorPacket;
 use pocketmine\network\mcpe\protocol\AddPlayerPacket;
 use pocketmine\network\mcpe\protocol\MobEquipmentPacket;
 use pocketmine\network\mcpe\protocol\PlayerListPacket;
@@ -82,7 +83,7 @@ class Boss extends Creature{
 	 * @param CompoundTag $nbt
 	 *
 	 * @return Skin
-	 * @throws \InvalidArgumentException
+	 * @throws InvalidArgumentException
 	 */
 	private function deserializeSkinNBT(CompoundTag $nbt) : Skin{
 		if($nbt->hasTag("skin",StringTag::class)){
@@ -144,7 +145,7 @@ class Boss extends Creature{
 			$pk->entries = [PlayerListEntry::createRemovalEntry($uuid)];
 			$player->dataPacket($pk);
 		}else{
-			$pk = new AddEntityPacket();
+			$pk = new AddActorPacket();
 			$pk->entityRuntimeId = $this->getID();
 			$pk->type = $this->networkId;
 			$pk->position = $this->asVector3();

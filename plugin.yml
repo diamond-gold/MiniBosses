@@ -1,8 +1,8 @@
 name: MiniBosses
 main: MiniBosses\Main
 description: Adds very customisable Bosses
-version: 2.0.1
-api: 3.8.0
+version: 2.0.2
+api: 3.9.0
 load: POSTWORLD
 author: ace
 commands:

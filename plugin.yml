@@ -1,14 +1,14 @@
 name: MiniBosses
 main: MiniBosses\Main
 description: Adds very customisable Bosses
-version: 2.0.2
-api: 3.9.0
+version: 3.0.0
+api: 4.3.0
 load: POSTWORLD
 author: ace
 commands:
   minibosses:
     description: Manage MiniBosses
-    usage: "/minibosses <create/spawn/delete/list>"
+    usage: "/minibosses list OR /minibosses create <networkId: EntityType> <name: message> OR /minibosses spawn <name: message> OR /minibosses delete <name: message>"
     permission: minibosses.command
 permissions:
   minibosses.command:

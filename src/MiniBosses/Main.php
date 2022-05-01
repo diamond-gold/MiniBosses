@@ -51,39 +51,44 @@ class Main extends PluginBase implements Listener
                     $networkId = LegacyEntityIdToStringIdMap::getInstance()->getLegacyToStringMap()[$bossData[$idTag]] ?? ($bossData[$idTag] === 63 ? EntityIds::PLAYER : null);
                     if ($networkId === null) {
                         $this->getLogger()->error("Failed to auto convert legacy int network id " . $bossData[$idTag] . ", please manually update to string id for boss $name");
-                        $this->data->setNested("$name.networkId", $bossData[$idTag]);
-                        $this->data->removeNested("$name.network-id");
-                        $this->data->setNested("$name.enabled", false);
+                        $bossData['networkId'] = $bossData[$idTag];
+                        unset($bossData['network-id']);
+                        $bossData['enabled'] = false;
                         $this->getLogger()->warning("Disabled boss $name, set \"enabled\" to true to enable");
                     } else {
                         $this->getLogger()->info("Converted legacy int network id for boss $name, " . $bossData[$idTag] . " => $networkId");
-                        $this->data->setNested("$name.networkId", $networkId);
-                        $this->data->removeNested("$name.network-id");
+                        $bossData['networkId'] = $networkId;
+                        unset($bossData['network-id']);
+                        $this->data->set($name,$bossData);
                     }
                 } else if (is_string($bossData[$idTag])) {
                     if (!str_starts_with($bossData["networkId"], "minecraft:")) {
                         $bossData["networkId"] = "minecraft:" . $bossData["networkId"];
                         $this->getLogger()->info("Updated networkId of boss $name " . $bossData["networkId"] . " => minecraft:" . $bossData["networkId"]);
-                        $this->data->setNested("$name.networkId", $bossData["networkId"]);
+                        $bossData['networkId'] = $bossData["networkId"];
+                        $this->data->set($name,$bossData);
                     }
                     $constants = (new ReflectionClass(EntityIds::class))->getConstants();
                     if (!in_array($bossData["networkId"], $constants, true)) {
                         $this->getLogger()->error("Unknown networkId " . $bossData["networkId"] . " for boss $name");
-                        $this->data->setNested("$name.enabled", false);
+                        $bossData['enabled'] = false;
+                        $this->data->set($name,$bossData);
                         $this->getLogger()->warning("Disabled boss $name, set \"enabled\" to true to enable");
                     }
                 }
             }
             if (isset($bossData["level"])) {
-                $this->data->setNested("$name.world", $bossData["level"]);
-                $this->data->removeNested("$name.level");
+                $bossData['world'] = $bossData['level'];
+                unset($bossData['level']);
+                $this->data->set($name,$bossData);
                 $this->getLogger()->info("Renamed level to world in config for boss $name");
             }
             if (isset($bossData["minions"])) {
                 foreach ($bossData["minions"] as $id => $minion) {
                     if (!$this->data->exists($minion["name"])) {
                         $this->getLogger()->error("Boss minion $id of boss $name has non existent boss name \"" . $minion["name"] . "\" set");
-                        $this->data->setNested("$name.enabled",false);
+                        $bossData['enabled'] = false;
+                        $this->data->set($name,$bossData);
                         $this->getLogger()->warning("Disabled boss $name, set \"enabled\" to true to enable");
                     }
                 }
@@ -110,7 +115,8 @@ class Main extends PluginBase implements Listener
                         $boss->flagForDespawn();
                 }
                 if($boss->isFlaggedForDespawn()){
-                    $this->data->setNested("$name.enabled",false);
+                    $data['enabled'] = false;
+                    $this->data->set($name, $data);
                     $this->getLogger()->warning("Disabled boss $name, set \"enabled\" to true to enable");
                 }
                 $boss->flagForDespawn();

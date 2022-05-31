@@ -27,6 +27,7 @@ use pocketmine\network\mcpe\convert\TypeConverter;
 use pocketmine\network\mcpe\protocol\AddActorPacket;
 use pocketmine\network\mcpe\protocol\AddPlayerPacket;
 use pocketmine\network\mcpe\protocol\AdventureSettingsPacket;
+use pocketmine\network\mcpe\protocol\MobEquipmentPacket;
 use pocketmine\network\mcpe\protocol\PlayerListPacket;
 use pocketmine\network\mcpe\protocol\types\DeviceOS;
 use pocketmine\network\mcpe\protocol\types\entity\Attribute as NetworkAttribute;
@@ -34,9 +35,11 @@ use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataProperties;
 use pocketmine\network\mcpe\protocol\types\entity\StringMetadataProperty;
 use pocketmine\network\mcpe\protocol\types\GameMode;
+use pocketmine\network\mcpe\protocol\types\inventory\ContainerIds;
 use pocketmine\network\mcpe\protocol\types\inventory\ItemStackWrapper;
 use pocketmine\network\mcpe\protocol\types\PlayerListEntry;
 use pocketmine\player\Player;
+use pocketmine\utils\TextFormat;
 use pocketmine\world\Position;
 use Ramsey\Uuid\Uuid;
 use ReflectionClass;
@@ -54,7 +57,7 @@ class Boss extends Living
     /** @var Item[][]|int[][] */
     public array $drops = array();
     public ?Skin $skin = null;
-    public Item $heldItem;
+    public Item $heldItem, $offhandItem;
     public bool $autoAttack;
     public float $width, $height;
     public bool $spreadDrops;
@@ -67,6 +70,23 @@ class Boss extends Living
     public int $minionId = -1;
     public array $topRewards = [];
     public array $topDamage = [];
+    public string $displayHealth;
+
+    const PROJECTILE_OPTIONS_TYPE = [
+        "networkId" => "string",
+        "fireRangeMin" => "double",
+        "fireRangeMax" => "double",
+        "speed" => "double",
+        "attackRate" => "integer",
+        "attackDamage" => "double",
+        "explodeRadius" => "double",
+        "explodeDestroyBlocks" => "boolean",
+        "health" => "double",
+        "canBeAttacked" => "boolean",
+        "despawnAfter" => "integer",
+        "gravity" => "double",
+    ];
+
     const PROJECTILE_OPTIONS_DEFAULT = [
         "networkId" => EntityIds::ARROW,
         "fireRangeMin" => 0,
@@ -84,6 +104,7 @@ class Boss extends Living
     const BOSS_OPTIONS_DEFAULT = [
         "enabled" => false,
         "health" => 20,
+        "displayHealth" => "",
         "range" => 10,
         "attackDamage" => 1,
         "attackRate" => 10,
@@ -92,6 +113,7 @@ class Boss extends Living
         "drops" => "1;0;1;;100 2;0;1;;50 3;0;1;;25",
         "respawnTime" => 100,
         "heldItem" => "",
+        "offhandItem" => "",
         "scale" => 1,
         "autoAttack" => false,
         "width" => 1,
@@ -168,6 +190,7 @@ class Boss extends Living
         }
         $this->respawnTime = $this->validateType($data,"respawnTime","integer");
         $this->heldItem = $this->parseItem($this->validateType($data,"heldItem","string"));
+        $this->offhandItem = $this->parseItem($this->validateType($data,"offhandItem","string"));
         if ($this->networkId === EntityIds::PLAYER) {
             try{
                 if (is_string($data["skin"])) {//old data
@@ -199,20 +222,7 @@ class Boss extends Living
         $this->spreadDrops = $this->validateType($data,"spreadDrops","boolean");
         $this->xpDropAmount = $this->validateType($data,"xpDrop","integer");
         $this->projectileOptions = $this->validateType($data,"projectile","array");
-        foreach ([
-                     "networkId" => "string",
-                     "fireRangeMin" => "double",
-                     "fireRangeMax" => "double",
-                     "speed" => "double",
-                     "attackRate" => "integer",
-                     "attackDamage" => "double",
-                     "explodeRadius" => "double",
-                     "explodeDestroyBlocks" => "boolean",
-                     "health" => "double",
-                     "canBeAttacked" => "boolean",
-                     "despawnAfter" => "integer",
-                     "gravity" => "double"
-                 ] as $option => $type){
+        foreach (self::PROJECTILE_OPTIONS_TYPE as $option => $type){
             $this->projectileOptions[$option] = $this->validateType($this->projectileOptions,$option,$type,self::PROJECTILE_OPTIONS_DEFAULT[$option] ?? null);
         }
         if($this->projectileOptions["networkId"] === EntityIds::PLAYER)
@@ -262,6 +272,7 @@ class Boss extends Living
                 }
             }
         }
+        $this->displayHealth = $this->validateType($data,"displayHealth","string");
         if($validateMinions) {
             foreach ($this->minionOptions as $id => $minionData) {
                 try{
@@ -370,6 +381,7 @@ class Boss extends Living
             ));
         }
         $player->getNetworkSession()->onMobArmorChange($this);
+        $player->getNetworkSession()->sendDataPacket(MobEquipmentPacket::create($this->getId(), ItemStackWrapper::legacy(TypeConverter::getInstance()->coreItemStackToNet($this->offhandItem)), 0, 0, ContainerIds::OFFHAND));
     }
 
     public function onUpdate(int $currentTick): bool
@@ -394,6 +406,7 @@ class Boss extends Living
                     } else {
                         $this->setPosition($this->spawnPos);
                         $this->setHealth($this->getMaxHealth());
+                        $this->setScoreTag("");
                         $this->target = null;
                     }
                 } else {
@@ -528,6 +541,15 @@ class Boss extends Living
         }
         parent::attack($source);
         if (!$source->isCancelled() && $source instanceof EntityDamageByEntityEvent) {
+            if(strlen($this->displayHealth)){
+                $length = 20;
+                $green = (int)($this->getHealth() / $this->getMaxHealth() * $length);
+                $this->setScoreTag(str_replace(
+                    ["{HEALTH}","{MAX_HEALTH}","{BAR}"],
+                    [$this->getHealth(),$this->getMaxHealth(),str_repeat('|',$green).TextFormat::GRAY.str_repeat('|',$length - $green)],
+                    $this->displayHealth)
+                );
+            }
             $dmg = $source->getDamager();
             if ($dmg instanceof Player) {
                 $this->target = $dmg;

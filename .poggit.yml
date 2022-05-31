@@ -5,4 +5,5 @@ branches:
 projects:
   MiniBosses:
     path: ""
+    icon: icon.png
 ...

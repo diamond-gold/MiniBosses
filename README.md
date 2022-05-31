@@ -121,6 +121,8 @@ BossName:
     canBeAttacked: false #whether the projectile can be hurt and deflected
     despawnAfter: 0 #in ticks, 0 = never despawn
     gravity: 0.04
+    canBeDeflected: true #player can change direction of projectile by attacking it, requires canBeAttacked to be true
+    followNearest: false #follow the nearest player
   armor: #will reduce damage taken
   - 310;0;1;0a000000 #ID;Damage;Count;NBT hex
   - 299;0;1;0a000000 #ID;Damage;Count;NBT hex

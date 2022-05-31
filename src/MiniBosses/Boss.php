@@ -85,6 +85,8 @@ class Boss extends Living
         "canBeAttacked" => "boolean",
         "despawnAfter" => "integer",
         "gravity" => "double",
+        "canBeDeflected" => "boolean",
+        "followNearest" => "boolean",
     ];
 
     const PROJECTILE_OPTIONS_DEFAULT = [
@@ -99,7 +101,9 @@ class Boss extends Living
         "health" => 1,
         "canBeAttacked" => false,
         "despawnAfter" => 0,
-        "gravity" => 0.04
+        "gravity" => 0.04,
+        "canBeDeflected" => true,
+        "followNearest" => false,
     ];
     const BOSS_OPTIONS_DEFAULT = [
         "enabled" => false,

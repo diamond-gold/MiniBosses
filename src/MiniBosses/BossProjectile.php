@@ -24,6 +24,8 @@ class BossProjectile extends Projectile
     protected bool $explodeDestroyBlocks;
     protected bool $canBeAttacked;
     protected int $despawnAfter;
+    protected bool $canBeDeflected;
+    protected bool $followNearest;
 
     public function __construct(Location $location, ?Entity $shootingEntity, ?CompoundTag $nbt = null)
     {
@@ -37,6 +39,8 @@ class BossProjectile extends Projectile
             $this->canBeAttacked = $shootingEntity->projectileOptions["canBeAttacked"];
             $this->despawnAfter = $shootingEntity->projectileOptions["despawnAfter"];
             $this->gravity = $shootingEntity->projectileOptions["gravity"];
+            $this->canBeDeflected = $shootingEntity->projectileOptions["canBeDeflected"];
+            $this->followNearest = $shootingEntity->projectileOptions["followNearest"];
             $this->setCanSaveWithChunk(false);
         }else
             $this->flagForDespawn();
@@ -74,6 +78,18 @@ class BossProjectile extends Projectile
     {
         if ($this->despawnAfter > 0 && $this->ticksLived > $this->despawnAfter)
             $this->flagForDespawn();
+        if($this->followNearest) {
+            $player = null;
+            $dist = PHP_INT_MAX;
+            foreach ($this->getViewers() as $p) {
+                if (!$p->isSpectator() && $p->isAlive() && ($d = $p->location->distanceSquared($this->location)) < $dist) {
+                    $player = $p;
+                    $dist = $d;
+                }
+            }
+            if($player !== null)
+                $this->setMotion($player->getEyePos()->subtractVector($this->location)->normalize()->multiply($this->motion->length()));
+        }
         return parent::onUpdate($currentTick);
     }
 
@@ -100,7 +116,7 @@ class BossProjectile extends Projectile
             Entity::attack($source);
             if ($source instanceof EntityDamageByEntityEvent) {
                 $attacker = $source->getDamager();
-                if ($attacker)
+                if ($attacker && $this->canBeDeflected)
                     $this->setMotion($attacker->getDirectionVector()->multiply($this->motion->length()));
             }
         } else

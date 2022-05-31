@@ -225,6 +225,11 @@ class Boss extends Living
         foreach (self::PROJECTILE_OPTIONS_TYPE as $option => $type){
             $this->projectileOptions[$option] = $this->validateType($this->projectileOptions,$option,$type,self::PROJECTILE_OPTIONS_DEFAULT[$option] ?? null);
         }
+        if(!str_starts_with($this->projectileOptions["networkId"],"minecraft:"))
+            $this->projectileOptions["networkId"] = "minecraft:".$this->projectileOptions["networkId"];
+        $constants = (new ReflectionClass(EntityIds::class))->getConstants();
+        if (!in_array($this->projectileOptions["networkId"], $constants, true))
+            throw new Exception("Unknown projectile entity type ".$this->projectileOptions["networkId"]);
         if($this->projectileOptions["networkId"] === EntityIds::PLAYER)
             throw new Exception(EntityIds::PLAYER . " is not a valid projectile entity type, please use other entity");
         foreach ($this->validateType($data,"armor","array") as $i => $piece) {
@@ -275,12 +280,16 @@ class Boss extends Living
         $this->displayHealth = $this->validateType($data,"displayHealth","string");
         if($validateMinions) {
             foreach ($this->minionOptions as $id => $minionData) {
+                if (!is_int($id))
+                    throw new Exception("Minion $id error: Minion id must be an integer");
                 try{
                     foreach (["name" => "string", "spawnInterval" => "integer", "spawnRange" => "double"] as $option => $type) {
                         $this->validateType($minionData, $option, $type);
                     }
                     $testMinionData = array_merge($minionData,["x" => 0,"y" => 0,"z" => 0,"world" => "","networkId" => EntityIds::PIG]);//dummy data that should be supplied by boss
                     $this->parseData($testMinionData);
+                    if($minionData['spawnRange'] > $this->range)
+                        $this->log(LogLevel::WARNING,"Minion $id has spawnRange (".$minionData['spawnRange'].") that is larger than its range ($this->range), it will immediately despawn if there are no players in it's range");
                 }catch (Exception $e){
                     throw new Exception("Minion $id error: " . $e->getMessage());
                 }
@@ -320,7 +329,7 @@ class Boss extends Living
     }
 
     protected function log(string $level,string $msg){
-        $this->plugin?->getLogger()->log($level,"[".$this->getName()."] ".$msg);
+        $this->plugin?->getLogger()->log($level,"[".($this->isMinion ? "Minion$this->minionId ".$this->getName() : $this->getName())."] ".$msg);
     }
 
     public function getName(): string

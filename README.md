@@ -2,10 +2,10 @@
 
 Adds very customizable Bosses
 
-[![](https://img.shields.io/github/issues/diamond-gold/MiniBosses?style=for-the-badge&logo=github)](https://github.com/diamond-gold/MiniBosses/issues)
-[![](https://img.shields.io/github/release/diamond-gold/MiniBosses?style=for-the-badge&logo=github)](https://github.com/CzechPMDevs/MiniBosses/releases)
-[![](https://img.shields.io/github/downloads/diamond-gold/MiniBosses/total?style=for-the-badge&logo=github)](https://github.com/CzechPMDevs/MiniBosses/releases)
-![](https://img.shields.io/github/downloads/diamond-gold/MiniBosses/latest/total?style=for-the-badge&logo=github)
+[![Issues](https://img.shields.io/github/issues/diamond-gold/MiniBosses?style=for-the-badge&logo=github)](https://github.com/diamond-gold/MiniBosses/issues)
+[![Total Downloads](https://img.shields.io/github/downloads/diamond-gold/MiniBosses/total?style=for-the-badge&logo=github)](https://github.com/diamond-gold/MiniBosses/releases)
+[![Release](https://img.shields.io/github/release/diamond-gold/MiniBosses?style=for-the-badge&logo=github)](https://github.com/diamond-gold/MiniBosses/releases)
+[![Latest Release Downloads](https://img.shields.io/github/downloads/diamond-gold/MiniBosses/latest/total?style=for-the-badge&logo=github)](https://github.com/diamond-gold/MiniBosses/releases/latest)
 
 [Latest release](https://github.com/diamond-gold/MiniBosses/releases/latest)
 
@@ -19,19 +19,20 @@ Adds very customizable Bosses
 
 [![](https://poggit.pmmp.io/shield.api/MiniBosses?style=for-the-badge)](https://poggit.pmmp.io/p/MiniBosses)
 [![](https://poggit.pmmp.io/shield.downloads/MiniBosses?style=for-the-badge)](https://poggit.pmmp.io/p/MiniBosses)
+[![](https://poggit.pmmp.io/shield.downloads.total/MiniBosses?style=for-the-badge)](https://poggit.pmmp.io/p/MiniBosses)
 [![](https://poggit.pmmp.io/shield.state/MiniBosses?style=for-the-badge)](https://poggit.pmmp.io/p/MiniBosses)
 
 # Commands
 
-Permission: ```minibosses.command```
+Permission: `minibosses.command`
 
-Create boss: /minibosses create network-id/entityType Name
+Create boss: `/minibosses create <entityType> <BossName>`
 
-Spawn boss: /minibosses spawn Name
+Spawn boss: `/minibosses spawn <BossName>`
 
-Remove boss: /minibosses delete Name
+Remove boss: `/minibosses delete <BossName>`
 
-List bosses in the config: /minibosses list
+List bosses in the config: `/minibosses list`
 
 # Supported Entities
 Theoretically any entity, not all entities tested
@@ -65,7 +66,7 @@ Configurable
   * Damage
   * Explosion radius
   * Health
-  * Can be attacked (whether it can be hurt and deflected)
+  * Can be attacked/deflected
   * Despawn time
   * Gravity
   * Explosive flying pigs anyone? :P
@@ -73,7 +74,7 @@ Configurable
 * Minions (Configured in the same manner as a Boss, can do anything a Boss can do)
 
 # Config Explanation
-```
+```yaml
 BossName:
   network-id: minecraft:player
   x: 127.444900 #spawn position x

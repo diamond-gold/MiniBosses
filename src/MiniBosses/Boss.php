@@ -91,7 +91,6 @@ class Boss extends Living
     ];
 
     const PROJECTILE_OPTIONS_DEFAULT = [
-        "networkId" => EntityIds::ARROW,
         "fireRangeMin" => 0,
         "fireRangeMax" => 100,
         "speed" => 1,
@@ -106,6 +105,7 @@ class Boss extends Living
         "canBeDeflected" => true,
         "followNearest" => false,
     ];
+
     const BOSS_OPTIONS_DEFAULT = [
         "enabled" => false,
         "health" => 20,
@@ -115,7 +115,7 @@ class Boss extends Living
         "attackRate" => 10,
         "attackRange" => 1.5,
         "speed" => 1,
-        "drops" => "1;0;1;;100 2;0;1;;50 3;0;1;;25",
+        "drops" => "",
         "respawnTime" => 100,
         "heldItem" => "",
         "offhandItem" => "",
@@ -127,13 +127,13 @@ class Boss extends Living
         "gravity" => 0.08,
         "spreadDrops" => false,
         "xpDrop" => 0,
-        "commands" => ["CONSOLE say {BOSS} killed by {PLAYER}", "OP say {BOSS}"],
-        "projectile" => self::PROJECTILE_OPTIONS_DEFAULT,
+        "commands" => [],
+        "projectile" => [],
         "armor" => [],
-        "hurtModifiers" => [EntityDamageEvent::CAUSE_ENTITY_ATTACK => 1, EntityDamageEvent::CAUSE_PROJECTILE => 0.2, EntityDamageEvent::CAUSE_FALL => 0],
+        "hurtModifiers" => [],
         "knockbackResistance" => 0,
         "minions" => [],
-        "topRewards" => [["item 1;0;1;","command CONSOLE say [{BOSS}] Top Damage by {PLAYER}"]]
+        "topRewards" => []
     ];
 
     public function initEntity(CompoundTag $nbt): void
@@ -227,16 +227,18 @@ class Boss extends Living
         $this->spreadDrops = $this->validateType($data,"spreadDrops","boolean");
         $this->xpDropAmount = $this->validateType($data,"xpDrop","integer");
         $this->projectileOptions = $this->validateType($data,"projectile","array");
-        foreach (self::PROJECTILE_OPTIONS_TYPE as $option => $type){
-            $this->projectileOptions[$option] = $this->validateType($this->projectileOptions,$option,$type,self::PROJECTILE_OPTIONS_DEFAULT[$option] ?? null);
+        if(isset($this->projectileOptions['networkId'])) {
+            foreach (self::PROJECTILE_OPTIONS_TYPE as $option => $type) {
+                $this->projectileOptions[$option] = $this->validateType($this->projectileOptions, $option, $type, self::PROJECTILE_OPTIONS_DEFAULT[$option] ?? null);
+            }
+            if (!str_starts_with($this->projectileOptions["networkId"], "minecraft:"))
+                $this->projectileOptions["networkId"] = "minecraft:" . $this->projectileOptions["networkId"];
+            $constants = (new ReflectionClass(EntityIds::class))->getConstants();
+            if (!in_array($this->projectileOptions["networkId"], $constants, true))
+                throw new Exception("Unknown projectile entity type " . $this->projectileOptions["networkId"]);
+            if ($this->projectileOptions["networkId"] === EntityIds::PLAYER)
+                throw new Exception(EntityIds::PLAYER . " is not a valid projectile entity type, please use other entity");
         }
-        if(!str_starts_with($this->projectileOptions["networkId"],"minecraft:"))
-            $this->projectileOptions["networkId"] = "minecraft:".$this->projectileOptions["networkId"];
-        $constants = (new ReflectionClass(EntityIds::class))->getConstants();
-        if (!in_array($this->projectileOptions["networkId"], $constants, true))
-            throw new Exception("Unknown projectile entity type ".$this->projectileOptions["networkId"]);
-        if($this->projectileOptions["networkId"] === EntityIds::PLAYER)
-            throw new Exception(EntityIds::PLAYER . " is not a valid projectile entity type, please use other entity");
         foreach ($this->validateType($data,"armor","array") as $i => $piece) {
             if (!is_int($i) || !$this->getArmorInventory()->slotExists($i)) {
                 $this->log(LogLevel::ERROR,"Invalid slot $i for armor, skipping");

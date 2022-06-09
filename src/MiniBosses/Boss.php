@@ -18,6 +18,7 @@ use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
+use pocketmine\item\StringToItemParser;
 use pocketmine\item\VanillaItems;
 use pocketmine\math\Vector3;
 use pocketmine\nbt\LittleEndianNbtSerializer;
@@ -325,6 +326,8 @@ class Boss extends Living
             return VanillaItems::AIR();
         $item = explode(";",$itemStr);
         try {
+            if(!is_numeric($item[0]))
+                return StringToItemParser::getInstance()->parse($item[0])->setCount($item[2])->setNamedTag(!empty($item[3]) ? (new LittleEndianNbtSerializer())->read(hex2bin($item[3]))->mustGetCompoundTag() : new CompoundTag());
             return ItemFactory::getInstance()->get($item[0], empty($item[1]) ? 0 : $item[1], empty($item[2]) ? 1 : $item[2], !empty($item[3]) ? (new LittleEndianNbtSerializer())->read(hex2bin($item[3]))->mustGetCompoundTag() : null);
         }catch (Exception|TypeError $e){
             $this->log(LogLevel::ERROR,"Failed to parse item $itemStr: ".$e->getMessage());

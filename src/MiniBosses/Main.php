@@ -63,9 +63,8 @@ class Main extends PluginBase implements Listener
                     }
                 } else if (is_string($bossData[$idTag])) {
                     if (!str_starts_with($bossData["networkId"], "minecraft:")) {
-                        $bossData["networkId"] = "minecraft:" . $bossData["networkId"];
                         $this->getLogger()->info("Updated networkId of boss $name " . $bossData["networkId"] . " => minecraft:" . $bossData["networkId"]);
-                        $bossData['networkId'] = $bossData["networkId"];
+                        $bossData["networkId"] = "minecraft:" . $bossData["networkId"];
                         $this->data->set($name,$bossData);
                     }
                     $constants = (new ReflectionClass(EntityIds::class))->getConstants();
@@ -172,9 +171,7 @@ class Main extends PluginBase implements Listener
                         } else {
                             if (!str_starts_with($networkId, "minecraft:")) $networkId = "minecraft:" . $networkId;
                             $constants = (new ReflectionClass(EntityIds::class))->getConstants();
-                            if (in_array($networkId, $constants, true)) {
-                                // Do absolutely nothing.
-                            } else {
+                            if (!in_array($networkId, $constants, true)) {
                                 $sender->sendMessage(TF::RED . "Unrecognised Network ID or Entity type $networkId");
                                 return true;
                             }
@@ -186,10 +183,10 @@ class Main extends PluginBase implements Listener
                             "networkId" => $networkId,
                             "x" => $pos->x, "y" => $pos->y, "z" => $pos->z, "world" => $pos->getWorld()->getFolderName(),
 
-                            "heldItem" => ($heldItem->getId() . ";" . ($heldItem instanceof Durable ? $heldItem->getDamage() : 0) . ";" . $heldItem->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($heldItem->getNamedTag())))),
+                            "heldItem" => ($heldItem->getId() . ";" . $heldItem->getMeta() . ";" . $heldItem->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($heldItem->getNamedTag())))),
                             "projectile" => Boss::PROJECTILE_OPTIONS_DEFAULT,
                             "armor" => array_map(function (Item $i): string {
-                                return $i->getId() . ";" . ($i instanceof Durable ? $i->getDamage() : 0) . ";" . $i->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($i->getNamedTag())));
+                                return $i->getId() . ";" . $i->getMeta() . ";" . $i->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($i->getNamedTag())));
                             }, $sender->getArmorInventory()->getContents(true)),
                             "minions" => [["name" => $name, "spawnInterval" => 100, "spawnRange" => 5, "health" => 1, "gravity" => 0, "drops" => "", "minions" => [], "commands" => []]]
                         ]);

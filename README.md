@@ -2,12 +2,12 @@
 
 Adds very customizable Bosses
 
-[![Issues](https://img.shields.io/github/issues/diamond-gold/MiniBosses?style=for-the-badge&logo=github)](https://github.com/diamond-gold/MiniBosses/issues)
+[![Feature Requests](https://img.shields.io/github/issues-raw/diamond-gold/MiniBosses/Feature%20Request?label=Feature%20Requests&logo=github&style=for-the-badge)](https://github.com/diamond-gold/MiniBosses/issues)
+[![Bug Reports](https://img.shields.io/github/issues-raw/diamond-gold/MiniBosses/bug?label=Bug%20Reports&logo=github&style=for-the-badge)](https://github.com/diamond-gold/MiniBosses/issues)
 [![Total Downloads](https://img.shields.io/github/downloads/diamond-gold/MiniBosses/total?style=for-the-badge&logo=github)](https://github.com/diamond-gold/MiniBosses/releases)
-[![Release](https://img.shields.io/github/release/diamond-gold/MiniBosses?style=for-the-badge&logo=github)](https://github.com/diamond-gold/MiniBosses/releases)
-[![Latest Release Downloads](https://img.shields.io/github/downloads/diamond-gold/MiniBosses/latest/total?style=for-the-badge&logo=github)](https://github.com/diamond-gold/MiniBosses/releases/latest)
 
-[Latest release](https://github.com/diamond-gold/MiniBosses/releases/latest)
+[![Release](https://img.shields.io/github/release/diamond-gold/MiniBosses?style=for-the-badge&logo=github)](https://github.com/diamond-gold/MiniBosses/releases/latest)
+[![Latest Release Downloads](https://img.shields.io/github/downloads/diamond-gold/MiniBosses/latest/total?style=for-the-badge&logo=github)](https://github.com/diamond-gold/MiniBosses/releases/latest)
 
 ### Poggit
 
@@ -95,7 +95,7 @@ BossName:
     GeometryName: ""
     GeometryData: "" #geometry hex/json
   heldItem: "276;0;1;" #for display only, in the format: ID;Damage;Count;NBT hex
-  offhandItem: "" #for display only, in the format: ID;Damage;Count;NBT hex
+  offhandItem: "276;0;1;" #for display only, in the format: ID;Damage;Count;NBT hex
   scale: 1
   autoAttack: false #auto attack players when they are in range
   width: 1 #before scale is applied
@@ -108,7 +108,7 @@ BossName:
    - CONSOLE say Hi {PLAYER} {BOSS} #execute as console if prefixed with CONSOLE, {PLAYER} as player name, {BOSS} as boss name
    - OP say {BOSS} #temp set player as OP and execute command on behalf of player
    - me Hi
-  projectile: #Boss will always priortize firing projectile over attacking if within range specified below
+  projectile: #Boss will always prioritize firing projectile over attacking if within range specified below
     # [] for no projectile fired
     networkId: minecraft:arrow #any entity except player, note arrow/item cannot be attacked due to client-side limitation
     fireRangeMin: 5 #fire projectile if target within range Min Max
@@ -129,7 +129,7 @@ BossName:
   - 299;0;1;0a000000 #ID;Damage;Count;NBT hex
   - 300;0;1;0a000000 #ID;Damage;Count;NBT hex
   - 301;0;1;0a000000 #ID;Damage;Count;NBT hex
-  hurtModifiers: #any damage cause (integer, See EntityDamageEvent): multiplier
+  hurtModifiers: #any damage cause (integer, See https://github.com/pmmp/PocketMine-MP/blob/stable/src/event/entity/EntityDamageEvent.php): multiplier
     1: 1 #entity attack: no change
     2: 0.2 #projectile: 80% damage reduction
     4: 0 #fall damage: negate all
@@ -142,8 +142,8 @@ BossName:
   - - item 1;0;1; #ID;Damage;Count;NBT hex
     - command CONSOLE say [{BOSS}] Top 2 Damage by {PLAYER}
   minions: #minions will inherit data of respective Boss and any data specified below will override inherited data
-  #minions will disappear once out of range from spawn position or if target lost
-  - name: BossName #you can use any boss, x,y,z,world will be automatically replaced with random position within spawnRange
+  #minions will disappear once out of range from spawn position or if target is lost
+  - name: BossName #you can use any boss, x,y,z,world will be automatically replaced with a random position within spawnRange
     spawnInterval: 100 #in ticks
     spawnRange: 5 #random position within this range from current Boss position will be selected as spawn position
     health: 1 #optional override

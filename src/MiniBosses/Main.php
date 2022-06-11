@@ -11,7 +11,6 @@ use pocketmine\entity\EntityFactory;
 use pocketmine\entity\Location;
 use pocketmine\event\Listener;
 use pocketmine\event\world\ChunkLoadEvent;
-use pocketmine\item\Durable;
 use pocketmine\item\Item;
 use pocketmine\nbt\LittleEndianNbtSerializer;
 use pocketmine\nbt\tag\CompoundTag;
@@ -168,6 +167,7 @@ class Main extends PluginBase implements Listener
                     if ($this->data->get($name, null) === null) {
                         if (is_numeric($networkId)) {
                             $sender->sendMessage("Legacy int network id may not be supported in the future, please use string id instead");
+                            $networkId = (int) $networkId;
                         } else {
                             if (!str_starts_with($networkId, "minecraft:")) $networkId = "minecraft:" . $networkId;
                             $constants = (new ReflectionClass(EntityIds::class))->getConstants();

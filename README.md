@@ -73,6 +73,32 @@ Configurable
 * Top damage rewards (items/commands)
 * Minions (Configured in the same manner as a Boss, can do anything a Boss can do)
 
+# Configuring items with `Custom Name` / `Lore` / `Enchantments`
+### In-game (only works for held item / armor)
+1. Give yourself the desired item (with NBT if applicable) `/give`
+2. (Optional) Enchant the item `/enchant`
+3. (Optional) Modify the item with any other plugin
+4. Equip/Hold the item
+5. Create a Boss
+6. (Optional) Copy the value in config to anywhere that accept item (For example `drops`)
+
+Example unbreakable Diamond Sword named MyItem with Sharpness V Enchantment:
+`diamond_sword;0;1;0a0000010b00556e627265616b61626c65010a0700646973706c61790804004e616d6506004d794974656d0904004c6f7265080200000005004c6f72653105004c6f72653200090400656e63680a01000000020200696409000203006c766c05000000`
+
+### In Config (available in v3.2+)
+1. Use any *Java Edition* \****1.12***\* `/give` command generator available online [[Example](https://www.gamergeeks.net/apps/minecraft/give-command-generator)] (Select Java 1.12) 
+2. Modify the result obtained
+   1. Note that *Java Edition* enchantment IDs are different from *Bedrock Edition*, convert IDs accordingly [[Bedrock Enchantment IDs](https://github.com/pmmp/PocketMine-MP/blob/stable/src/data/bedrock/EnchantmentIds.php)]
+   2. Depending on the used command generator, you may need to correct the tag values
+      1. Add `b` behind `ByteTag` values (`Unbreakable:1b` etc)
+      2. Add `s` behind `ShortTag` values (`ench:[{id:9s,lvl:5s}` etc)
+      3. Add `l` behind `LongTag` values
+      4. Add `f` behind `FloatTag` values
+      4. Add `d` behind `DoubleTag` values
+3. Paste the result value anywhere that accept item (For example `drops`)
+
+Example unbreakable Diamond Sword named MyItem with Sharpness V Enchantment:
+`diamond_sword;0;1;{Unbreakable:1b,display:{Name:MyItem,Lore:[Lore1,Lore2]},ench:[{id:9s,lvl:5s}]}`
 # Config Explanation
 ```yaml
 BossName:

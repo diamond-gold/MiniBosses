@@ -16,11 +16,13 @@ use pocketmine\entity\object\ItemEntity;
 use pocketmine\entity\Skin;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDamageEvent;
+use pocketmine\item\Durable;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
 use pocketmine\item\StringToItemParser;
 use pocketmine\item\VanillaItems;
 use pocketmine\math\Vector3;
+use pocketmine\nbt\JsonNbtParser;
 use pocketmine\nbt\LittleEndianNbtSerializer;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\convert\SkinAdapterSingleton;
@@ -326,11 +328,33 @@ class Boss extends Living
     private function parseItem(string $itemStr): Item{
         if($itemStr === "")
             return VanillaItems::AIR();
-        $item = explode(";",$itemStr);
+        $arr = explode(";",$itemStr);
         try {
-            if(!is_numeric($item[0]))
-                return StringToItemParser::getInstance()->parse($item[0])->setCount($item[2])->setNamedTag(!empty($item[3]) ? (new LittleEndianNbtSerializer())->read(hex2bin($item[3]))->mustGetCompoundTag() : new CompoundTag());
-            return ItemFactory::getInstance()->get($item[0], empty($item[1]) ? 0 : $item[1], empty($item[2]) ? 1 : $item[2], !empty($item[3]) ? (new LittleEndianNbtSerializer())->read(hex2bin($item[3]))->mustGetCompoundTag() : null);
+            if(empty($arr[0]))
+                throw new Exception("Empty ID");
+            if(!is_numeric($arr[0])) {
+                $item = StringToItemParser::getInstance()->parse($arr[0]);
+                if($item === null)
+                    throw new Exception("Unknown ID '$arr[0]'");
+                if($item instanceof Durable && isset($arr[1])){
+                    $item->setDamage($arr[1]);
+                }
+            }else
+                $item = ItemFactory::getInstance()->get($arr[0], empty($arr[1]) ? 0 : $arr[1]);
+
+            if(!empty($arr[2]))
+                $item->setCount($arr[2]);
+
+            $nbt = null;
+            if(!empty($arr[3])){
+                if(str_starts_with($arr[3],'{'))
+                    $nbt = JsonNbtParser::parseJson($arr[3]);
+                else
+                    $nbt = (new LittleEndianNbtSerializer())->read(hex2bin($arr[3]))->mustGetCompoundTag();
+            }
+            if($nbt !== null)
+                $item->setNamedTag($nbt);
+            return $item;
         }catch (Exception|TypeError $e){
             $this->log(LogLevel::ERROR,"Failed to parse item $itemStr: ".$e->getMessage());
         }

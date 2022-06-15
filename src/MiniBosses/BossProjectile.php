@@ -12,6 +12,8 @@ use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\event\entity\ProjectileHitEvent;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\protocol\AddActorPacket;
+use pocketmine\network\mcpe\protocol\SpawnParticleEffectPacket;
+use pocketmine\network\mcpe\protocol\types\DimensionIds;
 use pocketmine\network\mcpe\protocol\types\entity\Attribute as NetworkAttribute;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\player\Player;
@@ -26,12 +28,13 @@ class BossProjectile extends Projectile
     protected int $despawnAfter;
     protected bool $canBeDeflected;
     protected bool $followNearest;
+    protected string $particle;
 
     public function __construct(Location $location, ?Entity $shootingEntity, ?CompoundTag $nbt = null)
     {
         parent::__construct($location, $shootingEntity, $nbt);
         if($shootingEntity instanceof Boss) {
-            $this->networkId = $nbt->getString("networkId");
+            $this->networkId = $shootingEntity->projectileOptions["networkId"];
             $this->setBaseDamage($shootingEntity->projectileOptions["attackDamage"]);
             $this->explodeRadius = $shootingEntity->projectileOptions["explodeRadius"];
             $this->explodeDestroyBlocks = $shootingEntity->projectileOptions["explodeDestroyBlocks"];
@@ -41,6 +44,7 @@ class BossProjectile extends Projectile
             $this->gravity = $shootingEntity->projectileOptions["gravity"];
             $this->canBeDeflected = $shootingEntity->projectileOptions["canBeDeflected"];
             $this->followNearest = $shootingEntity->projectileOptions["followNearest"];
+            $this->particle = $shootingEntity->projectileOptions["particle"];
             $this->setCanSaveWithChunk(false);
         }else
             $this->flagForDespawn();
@@ -58,7 +62,7 @@ class BossProjectile extends Projectile
 
     public function sendSpawnPacket(Player $player): void
     {
-        if ($this->networkId !== EntityIds::PLAYER) {
+        if ($this->networkId !== EntityIds::PLAYER && !empty($this->networkId)) {
             $player->getNetworkSession()->sendDataPacket(AddActorPacket::create(
                 $this->getId(),
                 $this->getId(),
@@ -90,6 +94,10 @@ class BossProjectile extends Projectile
             if($player !== null)
                 $this->setMotion($player->getEyePos()->subtractVector($this->location)->normalize()->multiply($this->motion->length()));
         }
+        if(!empty($this->particle))
+            $this->server->broadcastPackets($this->getViewers(),[
+                SpawnParticleEffectPacket::create(DimensionIds::OVERWORLD,-1,$this->getPosition(),$this->particle,null)
+            ]);
         return parent::onUpdate($currentTick);
     }
 

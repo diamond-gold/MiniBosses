@@ -100,8 +100,8 @@ class Main extends PluginBase implements Listener
             if($data["enabled"] ?? true) {
                 $tested++;
                 $boss = (new Boss($loc, CompoundTag::create()->setString("CustomName", $name)));
-                if(isset($boss->projectileOptions["networkId"])) {
-                    $projectile = (new BossProjectile($loc, $boss, CompoundTag::create()->setString("networkId", $boss->projectileOptions["networkId"])));
+                if(!empty($boss->projectileOptions["networkId"]) || !empty($boss->projectileOptions["particle"])) {
+                    $projectile = (new BossProjectile($loc, $boss));
                     if($projectile->isFlaggedForDespawn()){
                         $boss->flagForDespawn();
                     }

@@ -150,6 +150,7 @@ BossName:
     gravity: 0.04
     canBeDeflected: true #player can change direction of projectile by attacking it, requires canBeAttacked to be true
     followNearest: false #follow the nearest player
+    particle: minecraft:endrod #https://www.digminecraft.com/lists/particle_list_pe.php
   armor: #will reduce damage taken
   - 310;0;1;0a000000 #ID;Damage;Count;NBT hex
   - 299;0;1;0a000000 #ID;Damage;Count;NBT hex

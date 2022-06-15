@@ -90,9 +90,11 @@ class Boss extends Living
         "gravity" => "double",
         "canBeDeflected" => "boolean",
         "followNearest" => "boolean",
+        "particle" => "string",
     ];
 
     const PROJECTILE_OPTIONS_DEFAULT = [
+        "networkId" => "",
         "fireRangeMin" => 0,
         "fireRangeMax" => 100,
         "speed" => 1,
@@ -106,6 +108,7 @@ class Boss extends Living
         "gravity" => 0.04,
         "canBeDeflected" => true,
         "followNearest" => false,
+        "particle" => "",
     ];
 
     const BOSS_OPTIONS_DEFAULT = [
@@ -229,17 +232,23 @@ class Boss extends Living
         $this->spreadDrops = $this->validateType($data,"spreadDrops","boolean");
         $this->xpDropAmount = $this->validateType($data,"xpDrop","integer");
         $this->projectileOptions = $this->validateType($data,"projectile","array");
-        if(isset($this->projectileOptions['networkId'])) {
+        if(isset($this->projectileOptions['networkId']) || isset($this->projectileOptions['particle'])) {
             foreach (self::PROJECTILE_OPTIONS_TYPE as $option => $type) {
                 $this->projectileOptions[$option] = $this->validateType($this->projectileOptions, $option, $type, self::PROJECTILE_OPTIONS_DEFAULT[$option] ?? null);
             }
-            if (!str_starts_with($this->projectileOptions["networkId"], "minecraft:"))
-                $this->projectileOptions["networkId"] = "minecraft:" . $this->projectileOptions["networkId"];
-            $constants = (new ReflectionClass(EntityIds::class))->getConstants();
-            if (!in_array($this->projectileOptions["networkId"], $constants, true))
-                throw new Exception("Unknown projectile entity type " . $this->projectileOptions["networkId"]);
-            if ($this->projectileOptions["networkId"] === EntityIds::PLAYER)
-                throw new Exception(EntityIds::PLAYER . " is not a valid projectile entity type, please use other entity");
+            if(!empty($this->projectileOptions["networkId"])) {
+                if (!str_starts_with($this->projectileOptions["networkId"], "minecraft:"))
+                    $this->projectileOptions["networkId"] = "minecraft:" . $this->projectileOptions["networkId"];
+                $constants = (new ReflectionClass(EntityIds::class))->getConstants();
+                if (!in_array($this->projectileOptions["networkId"], $constants, true))
+                    throw new Exception("Unknown projectile entity type " . $this->projectileOptions["networkId"]);
+                if ($this->projectileOptions["networkId"] === EntityIds::PLAYER)
+                    throw new Exception(EntityIds::PLAYER . " is not a valid projectile entity type, please use other entity");
+            }else if(empty($this->projectileOptions["particle"])){
+                $this->log(LogLevel::WARNING,"Projectile is completely invisible");
+            }
+            if (!empty($this->projectileOptions["particle"]) && !str_starts_with($this->projectileOptions["particle"], "minecraft:"))
+                $this->projectileOptions["particle"] = "minecraft:" . $this->projectileOptions["particle"];
         }
         foreach ($this->validateType($data,"armor","array") as $i => $piece) {
             if (!is_int($i) || !$this->getArmorInventory()->slotExists($i)) {
@@ -486,15 +495,15 @@ class Boss extends Living
                             $this->motion->y = ($this->gravityEnabled ? 0 : mt_rand(0,1)) === 0 ? $this->jumpVelocity : -$this->jumpVelocity;
                         }
                         $dist = $this->location->distance($player->location);
-                        if (isset($this->projectileOptions["networkId"])) {
+                        if (!empty($this->projectileOptions["networkId"]) || !empty($this->projectileOptions["particle"])) {
                             if ($dist >= $this->projectileOptions["fireRangeMin"] && $dist <= $this->projectileOptions["fireRangeMax"] && $this->attackDelay > $this->projectileOptions["attackRate"]) {
                                 $this->attackDelay = 0;
                                 $projectile = new BossProjectile(Location::fromObject(
                                     $this->getEyePos(),
                                     $this->getWorld(),
                                     ($this->location->yaw > 180 ? 360 : 0) - $this->location->yaw,
-                                    -$this->location->pitch), $this, CompoundTag::create()->setString("networkId", $this->projectileOptions["networkId"])
-                                );
+                                    -$this->location->pitch
+                                ), $this);
                                 $projectile->setMotion($player->getEyePos()->subtractVector($this->getEyePos())->normalize()->multiply($this->projectileOptions["speed"]));
                                 $projectile->spawnToAll();
                             }

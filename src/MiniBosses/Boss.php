@@ -52,7 +52,6 @@ class Boss extends Living
 {
 
     private ?Main $plugin = null;
-    public ?Living $target = null;
     public Position $spawnPos;
     public float $attackDamage, $speed, $range;
     public string $networkId;
@@ -439,7 +438,7 @@ class Boss extends Living
     {
         if ($this->knockbackTicks > 0) $this->knockbackTicks--;
         if ($this->isAlive()) {
-            $player = $this->target;
+            $player = $this->getTargetEntity();
             if (!$player instanceof Living && $this->autoAttack) {
                 $dist = $this->range * $this->range;
                 foreach ($this->getViewers() as $p) {
@@ -448,7 +447,7 @@ class Boss extends Living
                         $dist = $d;
                     }
                 }
-                $this->target = $player;
+                $this->setTargetEntity($player);
             }
             if ($player instanceof Living && $player->getWorld() === $this->getWorld() && $player->isAlive() && !$player->isClosed()) {
                 if ($this->location->distance($this->spawnPos) > $this->range) {
@@ -458,7 +457,7 @@ class Boss extends Living
                         $this->setPosition($this->spawnPos);
                         $this->setHealth($this->getMaxHealth());
                         $this->setScoreTag("");
-                        $this->target = null;
+                        $this->setTargetEntity(null);
                     }
                 } else {
                     if(!$this->gravityEnabled)
@@ -509,9 +508,9 @@ class Boss extends Living
                             }
                         }
                         if ($this->attackDelay > $this->attackRate) {
-                            if($this->target->location->distance($this->location) < $this->attackRange){
+                            if($this->getTargetEntity()->location->distance($this->location) < $this->attackRange){
                                 $this->attackDelay = 0;
-                                $ev = new EntityDamageByEntityEvent($this, $this->target, EntityDamageEvent::CAUSE_ENTITY_ATTACK, $this->attackDamage);
+                                $ev = new EntityDamageByEntityEvent($this, $this->getTargetEntity(), EntityDamageEvent::CAUSE_ENTITY_ATTACK, $this->attackDamage);
                                 $player->attack($ev);
                                 $this->broadcastAnimation(new ArmSwingAnimation($this));
                             }
@@ -546,7 +545,7 @@ class Boss extends Living
                     $this->setPosition($this->spawnPos);
                     $this->setHealth($this->getMaxHealth());
                     $this->setScoreTag("");
-                    $this->target = null;
+                    $this->setTargetEntity(null);
                 }
             }
             $this->updateMovement();
@@ -604,7 +603,7 @@ class Boss extends Living
             }
             $dmg = $source->getDamager();
             if ($dmg instanceof Player) {
-                $this->target = $dmg;
+                $this->setTargetEntity($dmg);
                 $this->knockbackTicks = 10;
                 $this->topDamage[$dmg->getName()] = $source->getFinalDamage() + ($this->topDamage[$dmg->getName()] ?? 0);
             }
@@ -670,7 +669,6 @@ class Boss extends Living
     public function destroyCycles(): void
     {
         parent::destroyCycles();
-        unset($this->target);
         unset($this->plugin);
         unset($this->spawnPos);
         unset($this->drops);

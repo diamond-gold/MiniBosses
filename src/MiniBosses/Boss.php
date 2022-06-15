@@ -512,6 +512,7 @@ class Boss extends Living
                 } else {
                     $this->setPosition($this->spawnPos);
                     $this->setHealth($this->getMaxHealth());
+                    $this->setScoreTag("");
                     $this->target = null;
                 }
             }
@@ -580,8 +581,10 @@ class Boss extends Living
     public function kill(): void
     {
         parent::kill();
+        $player = null;
         if ($this->lastDamageCause instanceof EntityDamageByEntityEvent && $this->lastDamageCause->getDamager() instanceof Player)
-            $this->plugin->executeCommands($this, $this->lastDamageCause->getDamager());
+            $player = $this->lastDamageCause->getDamager();
+        $this->plugin->executeCommands($this, $player);
         arsort($this->topDamage);
         foreach ($this->topRewards as $topX => $rewards){
             $i = 0;

@@ -82,8 +82,8 @@ Configurable
 5. Create a Boss
 6. (Optional) Copy the value in config to anywhere that accept item (For example `drops`)
 
-Example unbreakable Diamond Sword named MyItem with Sharpness V Enchantment:
-`diamond_sword;0;1;0a0000010b00556e627265616b61626c65010a0700646973706c61790804004e616d6506004d794974656d0904004c6f7265080200000005004c6f72653105004c6f72653200090400656e63680a01000000020200696409000203006c766c05000000`
+Example unbreakable Diamond Sword named 'My Item' with Sharpness V Enchantment:
+`diamond_sword;0;1;0a0000010b00556e627265616b61626c65010a0700646973706c61790804004e616d6507004d79204974656d0904004c6f7265080200000010004c6f726531207769746820737061636505004c6f72653200090400656e63680a01000000020200696409000203006c766c05000000`
 
 ### In Config (available in v3.2+)
 1. Use any *Java Edition* \****1.12***\* `/give` command generator available online [[Example](https://www.gamergeeks.net/apps/minecraft/give-command-generator)] (Select Java 1.12) 
@@ -94,11 +94,12 @@ Example unbreakable Diamond Sword named MyItem with Sharpness V Enchantment:
       2. Add `s` behind `ShortTag` values (`ench:[{id:9s,lvl:5s}` etc)
       3. Add `l` behind `LongTag` values
       4. Add `f` behind `FloatTag` values
-      4. Add `d` behind `DoubleTag` values
+      5. Add `d` behind `DoubleTag` values
+   3. Replace all spaces ` ` with underscore `_`
 3. Paste the result value anywhere that accept item (For example `drops`)
 
-Example unbreakable Diamond Sword named MyItem with Sharpness V Enchantment:
-`diamond_sword;0;1;{Unbreakable:1b,display:{Name:MyItem,Lore:[Lore1,Lore2]},ench:[{id:9s,lvl:5s}]}`
+Example unbreakable Diamond Sword named 'My Item' with Sharpness V Enchantment:
+`diamond_sword;0;1;{Unbreakable:1b,display:{Name:My_Item,Lore:[Lore1_with_space,Lore2]},ench:[{id:9s,lvl:5s}]}`
 # Config Explanation
 ```yaml
 BossName:
@@ -112,7 +113,7 @@ BossName:
   attackDamage: 1 #no. of half hearts
   attackRate: 10 #in ticks
   speed: 1
-  drops: 1;0;1;;100 2;0;1;;50 3;0;1;;25 #in the format: ID;Damage;Count;NBT hex;DropChance(1-100),space separate items
+  drops: 1;0;1;;100 2;0;1;;50 3;0;1;;25 #in the format: ID;Damage;Count;NBT hex/json;DropChance(1-100),space separate items
   respawnTime: 100 #in ticks
   skin: #applicable only to minecraft:player
     Name: ""
@@ -120,8 +121,8 @@ BossName:
     CapeData: "" #skin cape hex
     GeometryName: ""
     GeometryData: "" #geometry hex/json
-  heldItem: "276;0;1;" #for display only, in the format: ID;Damage;Count;NBT hex
-  offhandItem: "276;0;1;" #for display only, in the format: ID;Damage;Count;NBT hex
+  heldItem: "276;0;1;" #for display only, in the format: ID;Damage;Count;NBT hex/json
+  offhandItem: "276;0;1;" #for display only, in the format: ID;Damage;Count;NBT hex/json
   scale: 1
   autoAttack: false #auto attack players when they are in range
   width: 1 #before scale is applied
@@ -152,10 +153,10 @@ BossName:
     followNearest: false #follow the nearest player
     particle: minecraft:endrod #https://www.digminecraft.com/lists/particle_list_pe.php
   armor: #will reduce damage taken
-  - 310;0;1;0a000000 #ID;Damage;Count;NBT hex
-  - 299;0;1;0a000000 #ID;Damage;Count;NBT hex
-  - 300;0;1;0a000000 #ID;Damage;Count;NBT hex
-  - 301;0;1;0a000000 #ID;Damage;Count;NBT hex
+  - 310;0;1;0a000000 #ID;Damage;Count;NBT hex/json
+  - 299;0;1;0a000000 #ID;Damage;Count;NBT hex/json
+  - 300;0;1;0a000000 #ID;Damage;Count;NBT hex/json
+  - 301;0;1;0a000000 #ID;Damage;Count;NBT hex/json
   hurtModifiers: #any damage cause (integer, See https://github.com/pmmp/PocketMine-MP/blob/stable/src/event/entity/EntityDamageEvent.php): multiplier
     1: 1 #entity attack: no change
     2: 0.2 #projectile: 80% damage reduction
@@ -163,10 +164,10 @@ BossName:
   knockbackResistance: 0 #chance of negating knockback 0.00-1.00
   topRewards: #starts counting from 0, [] for no top rewards
   #top 1
-  - - item 1;0;1; #ID;Damage;Count;NBT hex
+  - - item 1;0;1; #ID;Damage;Count;NBT hex/json
     - command CONSOLE say [{BOSS}] Top Damage by {PLAYER}
   #top 2
-  - - item 1;0;1; #ID;Damage;Count;NBT hex
+  - - item 1;0;1; #ID;Damage;Count;NBT hex/json
     - command CONSOLE say [{BOSS}] Top 2 Damage by {PLAYER}
   minions: #minions will inherit data of respective Boss and any data specified below will override inherited data
   #minions will disappear once out of range from spawn position or if target is lost

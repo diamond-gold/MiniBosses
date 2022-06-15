@@ -193,7 +193,7 @@ class Boss extends Living
         $this->drops = [];
         $drops = $this->validateType($data,"drops","string");
         if ($drops !== "") {
-            foreach (explode(' ', $drops) as $itemStr) {
+            foreach (explode(' ', $drops) as $itemStr) { //TODO: change this, this is preventing space character usage in NBT json
                 $explode = explode(';', $itemStr);
                 $this->drops[] = [$this->parseItem($itemStr), $explode[4] ?? 100];
             }
@@ -357,7 +357,7 @@ class Boss extends Living
             $nbt = null;
             if(!empty($arr[3])){
                 if(str_starts_with($arr[3],'{'))
-                    $nbt = JsonNbtParser::parseJson($arr[3]);
+                    $nbt = JsonNbtParser::parseJson(str_replace('_',' ',$arr[3]));
                 else
                     $nbt = (new LittleEndianNbtSerializer())->read(hex2bin($arr[3]))->mustGetCompoundTag();
             }

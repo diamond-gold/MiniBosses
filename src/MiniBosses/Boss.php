@@ -633,7 +633,7 @@ class Boss extends Living
                 }
             }
         }
-        if (!$this->isMinion)
+        if (!$this->isMinion && $this->respawnTime >= 0)
             $this->plugin->respawn($this->getName(), $this->respawnTime);
     }
 

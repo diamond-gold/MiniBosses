@@ -177,6 +177,7 @@ class Main extends PluginBase implements Listener
                             }
                         }
                         $heldItem = $sender->getInventory()->getItemInHand();
+                        $offhandItem = $sender->getOffHandInventory()->getItem(0);
                         $skin = $sender->getSkin();
                         $pos = $sender->getPosition();
                         $data = array_merge(Boss::BOSS_OPTIONS_DEFAULT, [
@@ -184,6 +185,7 @@ class Main extends PluginBase implements Listener
                             "x" => $pos->x, "y" => $pos->y, "z" => $pos->z, "world" => $pos->getWorld()->getFolderName(),
 
                             "heldItem" => ($heldItem->getId() . ";" . $heldItem->getMeta() . ";" . $heldItem->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($heldItem->getNamedTag())))),
+                            "offhandItem" => ($offhandItem->getId() . ";" . $offhandItem->getMeta() . ";" . $offhandItem->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($offhandItem->getNamedTag())))),
                             "projectile" => Boss::PROJECTILE_OPTIONS_DEFAULT,
                             "armor" => array_map(function (Item $i): string {
                                 return $i->getId() . ";" . $i->getMeta() . ";" . $i->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($i->getNamedTag())));

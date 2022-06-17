@@ -33,7 +33,7 @@ class BossProjectile extends Projectile
     public function __construct(Location $location, ?Entity $shootingEntity, ?CompoundTag $nbt = null)
     {
         parent::__construct($location, $shootingEntity, $nbt);
-        if($shootingEntity instanceof Boss) {
+        if ($shootingEntity instanceof Boss) {
             $this->networkId = $shootingEntity->projectileOptions["networkId"];
             $this->setBaseDamage($shootingEntity->projectileOptions["attackDamage"]);
             $this->explodeRadius = $shootingEntity->projectileOptions["explodeRadius"];
@@ -46,8 +46,9 @@ class BossProjectile extends Projectile
             $this->followNearest = $shootingEntity->projectileOptions["followNearest"];
             $this->particle = $shootingEntity->projectileOptions["particle"];
             $this->setCanSaveWithChunk(false);
-        }else
+        } else {
             $this->flagForDespawn();
+        }
     }
 
     protected function getInitialSizeInfo(): EntitySizeInfo
@@ -68,7 +69,10 @@ class BossProjectile extends Projectile
                 $this->getId(),
                 $this->networkId,
                 $this->location->asVector3(),
-                $this->getMotion(), $this->location->pitch, $this->location->yaw, $this->location->yaw,
+                $this->getMotion(),
+                $this->location->pitch,
+                $this->location->yaw,
+                $this->location->yaw,
                 array_map(function (Attribute $attr): NetworkAttribute {
                     return new NetworkAttribute($attr->getId(), $attr->getMinValue(), $attr->getMaxValue(), $attr->getValue(), $attr->getDefaultValue());
                 }, $this->attributeMap->getAll()),
@@ -80,9 +84,10 @@ class BossProjectile extends Projectile
 
     public function onUpdate(int $currentTick): bool
     {
-        if ($this->despawnAfter > 0 && $this->ticksLived > $this->despawnAfter)
+        if ($this->despawnAfter > 0 && $this->ticksLived > $this->despawnAfter) {
             $this->flagForDespawn();
-        if($this->followNearest) {
+        }
+        if ($this->followNearest) {
             $player = null;
             $dist = PHP_INT_MAX;
             foreach ($this->getViewers() as $p) {
@@ -91,13 +96,15 @@ class BossProjectile extends Projectile
                     $dist = $d;
                 }
             }
-            if($player !== null)
+            if ($player !== null) {
                 $this->setMotion($player->getEyePos()->subtractVector($this->location)->normalize()->multiply($this->motion->length()));
+            }
         }
-        if(!empty($this->particle))
-            $this->server->broadcastPackets($this->getViewers(),[
-                SpawnParticleEffectPacket::create(DimensionIds::OVERWORLD,-1,$this->getPosition(),$this->particle,null)
+        if (!empty($this->particle)) {
+            $this->server->broadcastPackets($this->getViewers(), [
+                SpawnParticleEffectPacket::create(DimensionIds::OVERWORLD, -1, $this->getPosition(), $this->particle, null)
             ]);
+        }
         return parent::onUpdate($currentTick);
     }
 
@@ -106,8 +113,9 @@ class BossProjectile extends Projectile
         parent::onHit($event);
         if ($this->explodeRadius > 0) {
             $explosion = new Explosion($this->location, $this->explodeRadius, $this);
-            if ($this->explodeDestroyBlocks)
+            if ($this->explodeDestroyBlocks) {
                 $explosion->explodeA();
+            }
             $explosion->explodeB();
         }
         $this->flagForDespawn();
@@ -124,10 +132,12 @@ class BossProjectile extends Projectile
             Entity::attack($source);
             if ($source instanceof EntityDamageByEntityEvent) {
                 $attacker = $source->getDamager();
-                if ($attacker && $this->canBeDeflected)
+                if ($attacker && $this->canBeDeflected) {
                     $this->setMotion($attacker->getDirectionVector()->multiply($this->motion->length()));
+                }
             }
-        } else
+        } else {
             parent::attack($source);
+        }
     }
 }

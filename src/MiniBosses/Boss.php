@@ -50,18 +50,25 @@ use TypeError;
 
 class Boss extends Living
 {
-
     private ?Main $plugin = null;
     public Position $spawnPos;
-    public float $attackDamage, $speed, $range;
+    public float $attackDamage;
+    public float $speed;
+    public float $range;
     public string $networkId;
-    public int $attackRate, $attackDelay = 0, $respawnTime, $knockbackTicks = 0,$attackRange;
+    public int $attackRate;
+    public int $attackDelay = 0;
+    public int $respawnTime;
+    public int $knockbackTicks = 0;
+    public int $attackRange;
     /** @var Item[][]|int[][] */
     public array $drops = array();
     public ?Skin $skin = null;
-    public Item $heldItem, $offhandItem;
+    public Item $heldItem;
+    public Item $offhandItem;
     public bool $autoAttack;
-    public float $width, $height;
+    public float $width;
+    public float $height;
     public bool $spreadDrops;
     public int $xpDropAmount;
     public array $projectileOptions = [];
@@ -145,169 +152,176 @@ class Boss extends Living
         parent::initEntity($nbt);
         $this->setCanSaveWithChunk(false);
         $this->plugin = $this->server->getPluginManager()->getPlugin("MiniBosses");
-        if(!$this->plugin){
+        if (!$this->plugin) {
             $this->flagForDespawn();
             return;
         }
         if ($this->plugin->isDisabled()) {
             $this->flagForDespawn();
-            $this->log(LogLevel::ERROR,"Despawn due to plugin disabled");
+            $this->log(LogLevel::ERROR, "Despawn due to plugin disabled");
             return;
         }
         $data = $this->plugin->data->get($this->getName());
         if (!$data) {
             $this->flagForDespawn();
-            $this->log(LogLevel::ERROR,"Despawn due to no data");
+            $this->log(LogLevel::ERROR, "Despawn due to no data");
             return;
         }
         try {
             $this->parseData($data);
         } catch (Exception $e) {
             $this->flagForDespawn();
-            $this->log(LogLevel::ERROR,"Despawn due to invalid data for boss: ".$e->getMessage());
+            $this->log(LogLevel::ERROR, "Despawn due to invalid data for boss: " . $e->getMessage());
         }
     }
 
     /**
      * @throws Exception
      */
-    private function parseData(array $data,bool $validateMinions = true)
+    private function parseData(array $data, bool $validateMinions = true)
     {
-        $this->width = $this->validateType($data,"width","double");
-        $this->height = $this->validateType($data,"height","double");
+        $this->width = $this->validateType($data, "width", "double");
+        $this->height = $this->validateType($data, "height", "double");
         $this->setSize(new EntitySizeInfo($this->height, $this->width));
-        $this->setScale($this->scale = $this->validateType($data,"scale","double"));
-        $this->networkId = $this->validateType($data,"networkId","string");
-        $this->range = $this->validateType($data,"range","integer");
+        $this->setScale($this->scale = $this->validateType($data, "scale", "double"));
+        $this->networkId = $this->validateType($data, "networkId", "string");
+        $this->range = $this->validateType($data, "range", "integer");
         $this->spawnPos = new Position(
-            $this->validateType($data,"x","double"),
-            $this->validateType($data,"y","double"),
-            $this->validateType($data,"z","double"),
-            $this->server->getWorldManager()->getWorldByName($this->validateType($data,"world","string"))
+            $this->validateType($data, "x", "double"),
+            $this->validateType($data, "y", "double"),
+            $this->validateType($data, "z", "double"),
+            $this->server->getWorldManager()->getWorldByName($this->validateType($data, "world", "string"))
         );
-        $this->attackDamage = $this->validateType($data,"attackDamage","double");
-        $this->attackRate = $this->validateType($data,"attackRate","double");
-        $this->attackRange = $this->validateType($data,"attackRange","double",$this->scale * $this->width / 2 + 1);
-        $this->speed = $this->validateType($data,"speed","double");
+        $this->attackDamage = $this->validateType($data, "attackDamage", "double");
+        $this->attackRate = $this->validateType($data, "attackRate", "double");
+        $this->attackRange = $this->validateType($data, "attackRange", "double", $this->scale * $this->width / 2 + 1);
+        $this->speed = $this->validateType($data, "speed", "double");
         $this->drops = [];
-        $drops = $this->validateType($data,"drops","string");
+        $drops = $this->validateType($data, "drops", "string");
         if ($drops !== "") {
             foreach (explode(' ', $drops) as $itemStr) { //TODO: change this, this is preventing space character usage in NBT json
                 $explode = explode(';', $itemStr);
                 $this->drops[] = [$this->parseItem($itemStr), $explode[4] ?? 100];
             }
         }
-        $this->respawnTime = $this->validateType($data,"respawnTime","integer");
-        $this->heldItem = $this->parseItem($this->validateType($data,"heldItem","string"));
-        $this->offhandItem = $this->parseItem($this->validateType($data,"offhandItem","string"));
+        $this->respawnTime = $this->validateType($data, "respawnTime", "integer");
+        $this->heldItem = $this->parseItem($this->validateType($data, "heldItem", "string"));
+        $this->offhandItem = $this->parseItem($this->validateType($data, "offhandItem", "string"));
         if ($this->networkId === EntityIds::PLAYER) {
-            try{
+            try {
                 if (is_string($data["skin"])) {//old data
                     $this->skin = new Skin(Uuid::uuid4()->toString(), $data["skin"]);
                 } else {
-                    $this->validateType($data,"skin","array");
+                    $this->validateType($data, "skin", "array");
                     $geometryData = json_decode($data["skin"]["GeometryData"]);
-                    if($geometryData === null)
+                    if ($geometryData === null) {
                         $geometryData = hex2bin($data["skin"]["GeometryData"]);
+                    }
                     $this->skin = new Skin($data["skin"]["Name"], hex2bin($data["skin"]["Data"]), hex2bin($data["skin"]["CapeData"]), $data["skin"]["GeometryName"], $geometryData);
                 }
-            }catch (Exception $e){
-                $this->log(LogLevel::ERROR,"Invalid skin: ".$e->getMessage());
+            } catch (Exception $e) {
+                $this->log(LogLevel::ERROR, "Invalid skin: " . $e->getMessage());
                 throw $e;
             }
         }
-        $this->autoAttack = $this->validateType($data,"autoAttack","boolean");
+        $this->autoAttack = $this->validateType($data, "autoAttack", "boolean");
         $this->setImmobile();
         $this->setNameTagAlwaysVisible();
         $this->setNameTagVisible();
         if (isset($data["health"])) {
-            $this->validateType($data,"health","double");
+            $this->validateType($data, "health", "double");
             $this->setMaxHealth($data["health"]);
             $this->setHealth($data["health"]);
         }
-        $this->jumpVelocity = $this->validateType($data,"jumpStrength","double");
-        $this->gravity = $this->validateType($data,"gravity","double");
+        $this->jumpVelocity = $this->validateType($data, "jumpStrength", "double");
+        $this->gravity = $this->validateType($data, "gravity", "double");
         $this->gravityEnabled = $this->gravity != 0;
-        $this->spreadDrops = $this->validateType($data,"spreadDrops","boolean");
-        $this->xpDropAmount = $this->validateType($data,"xpDrop","integer");
-        $this->projectileOptions = $this->validateType($data,"projectile","array");
-        if(isset($this->projectileOptions['networkId']) || isset($this->projectileOptions['particle'])) {
+        $this->spreadDrops = $this->validateType($data, "spreadDrops", "boolean");
+        $this->xpDropAmount = $this->validateType($data, "xpDrop", "integer");
+        $this->projectileOptions = $this->validateType($data, "projectile", "array");
+        if (isset($this->projectileOptions['networkId']) || isset($this->projectileOptions['particle'])) {
             foreach (self::PROJECTILE_OPTIONS_TYPE as $option => $type) {
                 $this->projectileOptions[$option] = $this->validateType($this->projectileOptions, $option, $type, self::PROJECTILE_OPTIONS_DEFAULT[$option] ?? null);
             }
-            if(!empty($this->projectileOptions["networkId"])) {
-                if (!str_starts_with($this->projectileOptions["networkId"], "minecraft:"))
+            if (!empty($this->projectileOptions["networkId"])) {
+                if (!str_starts_with($this->projectileOptions["networkId"], "minecraft:")) {
                     $this->projectileOptions["networkId"] = "minecraft:" . $this->projectileOptions["networkId"];
+                }
                 $constants = (new ReflectionClass(EntityIds::class))->getConstants();
-                if (!in_array($this->projectileOptions["networkId"], $constants, true))
+                if (!in_array($this->projectileOptions["networkId"], $constants, true)) {
                     throw new Exception("Unknown projectile entity type " . $this->projectileOptions["networkId"]);
-                if ($this->projectileOptions["networkId"] === EntityIds::PLAYER)
+                }
+                if ($this->projectileOptions["networkId"] === EntityIds::PLAYER) {
                     throw new Exception(EntityIds::PLAYER . " is not a valid projectile entity type, please use other entity");
-            }else if(empty($this->projectileOptions["particle"])){
-                $this->log(LogLevel::WARNING,"Projectile is completely invisible");
+                }
+            } elseif (empty($this->projectileOptions["particle"])) {
+                $this->log(LogLevel::WARNING, "Projectile is completely invisible");
             }
-            if (!empty($this->projectileOptions["particle"]) && !str_starts_with($this->projectileOptions["particle"], "minecraft:"))
+            if (!empty($this->projectileOptions["particle"]) && !str_starts_with($this->projectileOptions["particle"], "minecraft:")) {
                 $this->projectileOptions["particle"] = "minecraft:" . $this->projectileOptions["particle"];
+            }
         }
-        foreach ($this->validateType($data,"armor","array") as $i => $piece) {
+        foreach ($this->validateType($data, "armor", "array") as $i => $piece) {
             if (!is_int($i) || !$this->getArmorInventory()->slotExists($i)) {
-                $this->log(LogLevel::ERROR,"Invalid slot $i for armor, skipping");
+                $this->log(LogLevel::ERROR, "Invalid slot $i for armor, skipping");
                 continue;
             }
             $item = $this->parseItem($piece);
             $this->getArmorInventory()->setItem($i, $item);
         }
-        $this->hurtModifiers = $this->validateType($data,"hurtModifiers","array");
-        $damageCauses = array_filter((new ReflectionClass(EntityDamageEvent::class))->getConstants(),function ($value,$key):bool{
-            return str_contains($key,"CAUSE_");
-        },ARRAY_FILTER_USE_BOTH);
-        foreach ($this->hurtModifiers as $cause => $multiplier){
-            if(!in_array($cause,$damageCauses)){
+        $this->hurtModifiers = $this->validateType($data, "hurtModifiers", "array");
+        $damageCauses = array_filter((new ReflectionClass(EntityDamageEvent::class))->getConstants(), function ($value, $key): bool {
+            return str_contains($key, "CAUSE_");
+        }, ARRAY_FILTER_USE_BOTH);
+        foreach ($this->hurtModifiers as $cause => $multiplier) {
+            if (!in_array($cause, $damageCauses)) {
                 unset($this->hurtModifiers[$cause]);
-                $this->log(LogLevel::ERROR,"hurtModifiers: Unknown damage cause ".$cause.", skipping ");
+                $this->log(LogLevel::ERROR, "hurtModifiers: Unknown damage cause " . $cause . ", skipping ");
                 continue;
             }
-            if(!is_float($multiplier) && !is_int($multiplier)){
+            if (!is_float($multiplier) && !is_int($multiplier)) {
                 unset($this->hurtModifiers[$cause]);
-                $this->log(LogLevel::ERROR,"hurtModifiers: Invalid multiplier for cause ".$cause.", skipping");
+                $this->log(LogLevel::ERROR, "hurtModifiers: Invalid multiplier for cause " . $cause . ", skipping");
             }
         }
-        $this->knockbackResistanceAttr->setValue($this->validateType($data,"knockbackResistance","double"));
-        $this->minionOptions = $this->validateType($data,"minions","array");
-        $this->topRewards = $this->validateType($data,"topRewards", "array");
-        foreach ($this->topRewards as $top => $rewards){
-            if(is_array($rewards)){
-                foreach ($rewards as $i => $rewardStr){
-                    $r = explode(' ',$rewardStr);
-                    switch (strtolower($r[0])){
+        $this->knockbackResistanceAttr->setValue($this->validateType($data, "knockbackResistance", "double"));
+        $this->minionOptions = $this->validateType($data, "minions", "array");
+        $this->topRewards = $this->validateType($data, "topRewards", "array");
+        foreach ($this->topRewards as $top => $rewards) {
+            if (is_array($rewards)) {
+                foreach ($rewards as $i => $rewardStr) {
+                    $r = explode(' ', $rewardStr);
+                    switch (strtolower($r[0])) {
                         case "item":
-                            $this->topRewards[$top][$i] = $this->parseItem(substr($rewardStr,strlen($r[0]) + 1));
+                            $this->topRewards[$top][$i] = $this->parseItem(substr($rewardStr, strlen($r[0]) + 1));
                             break;
                         case "command":
-                            $this->topRewards[$top][$i] = substr($rewardStr,strlen($r[0]) + 1);
+                            $this->topRewards[$top][$i] = substr($rewardStr, strlen($r[0]) + 1);
                             break;
                         default:
                             unset($this->topRewards[$top][$i]);
-                            $this->log(LogLevel::ERROR,"topRewards: Unknown reward $rewardStr, skipping");
+                            $this->log(LogLevel::ERROR, "topRewards: Unknown reward $rewardStr, skipping");
                             break;
                     }
                 }
             }
         }
-        $this->displayHealth = $this->validateType($data,"displayHealth","string");
-        if($validateMinions) {
+        $this->displayHealth = $this->validateType($data, "displayHealth", "string");
+        if ($validateMinions) {
             foreach ($this->minionOptions as $id => $minionData) {
-                if (!is_int($id))
+                if (!is_int($id)) {
                     throw new Exception("Minion $id error: Minion id must be an integer");
-                try{
+                }
+                try {
                     foreach (["name" => "string", "spawnInterval" => "integer", "spawnRange" => "double"] as $option => $type) {
                         $this->validateType($minionData, $option, $type);
                     }
-                    $testMinionData = array_merge($minionData,["x" => 0,"y" => 0,"z" => 0,"world" => "","networkId" => EntityIds::PIG]);//dummy data that should be supplied by boss
+                    $testMinionData = array_merge($minionData, ["x" => 0, "y" => 0, "z" => 0, "world" => "", "networkId" => EntityIds::PIG]);//dummy data that should be supplied by boss
                     $this->parseData($testMinionData);
-                    if($minionData['spawnRange'] > $this->range)
-                        $this->log(LogLevel::WARNING,"Minion $id has spawnRange (".$minionData['spawnRange'].") that is larger than its range ($this->range), it will immediately despawn if there are no players in it's range");
-                }catch (Exception $e){
+                    if ($minionData['spawnRange'] > $this->range) {
+                        $this->log(LogLevel::WARNING, "Minion $id has spawnRange (" . $minionData['spawnRange'] . ") that is larger than its range ($this->range), it will immediately despawn if there are no players in it's range");
+                    }
+                } catch (Exception $e) {
                     throw new Exception("Minion $id error: " . $e->getMessage());
                 }
             }
@@ -319,58 +333,72 @@ class Boss extends Living
      * Throws Exception if data is not expected type and no default value
      * @throws Exception
      */
-    private function validateType(array $data, string $index, string $type, mixed $defaultOverride = null){
+    private function validateType(array $data, string $index, string $type, mixed $defaultOverride = null)
+    {
         $default = $defaultOverride ?? self::BOSS_OPTIONS_DEFAULT[$index] ?? null;
-        if(!isset($data[$index])) {
-            if($default === null)
+        if (!isset($data[$index])) {
+            if ($default === null) {
                 throw new SavedDataLoadingException("Missing required data \"$index\" of type $type");
+            }
             return $default;
         }
         $dataType = gettype($data[$index]);
-        if($dataType === $type || ($dataType === "integer" && $type === "double"))
+        if ($dataType === $type || ($dataType === "integer" && $type === "double")) {
             return $data[$index];
-        if($type === "double") $type = "integer/float/double";
+        }
+        if ($type === "double") {
+            $type = "integer/float/double";
+        }
         throw new SavedDataLoadingException("\"$index\" must be $type, $dataType given");
     }
 
-    private function parseItem(string $itemStr): Item{
-        if($itemStr === "")
+    private function parseItem(string $itemStr): Item
+    {
+        if ($itemStr === "") {
             return VanillaItems::AIR();
-        $arr = explode(";",$itemStr);
+        }
+        $arr = explode(";", $itemStr);
         try {
-            if(empty($arr[0]))
+            if (empty($arr[0])) {
                 throw new Exception("Empty ID");
-            if(!is_numeric($arr[0])) {
+            }
+            if (!is_numeric($arr[0])) {
                 $item = StringToItemParser::getInstance()->parse($arr[0]);
-                if($item === null)
+                if ($item === null) {
                     throw new Exception("Unknown ID '$arr[0]'");
-                if($item instanceof Durable && isset($arr[1])){
+                }
+                if ($item instanceof Durable && isset($arr[1])) {
                     $item->setDamage($arr[1]);
                 }
-            }else
+            } else {
                 $item = ItemFactory::getInstance()->get($arr[0], empty($arr[1]) ? 0 : $arr[1]);
+            }
 
-            if(!empty($arr[2]))
+            if (!empty($arr[2])) {
                 $item->setCount($arr[2]);
+            }
 
             $nbt = null;
-            if(!empty($arr[3])){
-                if(str_starts_with($arr[3],'{'))
-                    $nbt = JsonNbtParser::parseJson(str_replace('_',' ',$arr[3]));
-                else
+            if (!empty($arr[3])) {
+                if (str_starts_with($arr[3], '{')) {
+                    $nbt = JsonNbtParser::parseJson(str_replace('_', ' ', $arr[3]));
+                } else {
                     $nbt = (new LittleEndianNbtSerializer())->read(hex2bin($arr[3]))->mustGetCompoundTag();
+                }
             }
-            if($nbt !== null)
+            if ($nbt !== null) {
                 $item->setNamedTag($nbt);
+            }
             return $item;
-        }catch (Exception|TypeError $e){
-            $this->log(LogLevel::ERROR,"Failed to parse item $itemStr: ".$e->getMessage());
+        } catch (Exception|TypeError $e) {
+            $this->log(LogLevel::ERROR, "Failed to parse item $itemStr: " . $e->getMessage());
         }
         return VanillaItems::AIR();
     }
 
-    protected function log(string $level,string $msg){
-        $this->plugin?->getLogger()->log($level,"[".($this->isMinion ? "Minion$this->minionId ".$this->getName() : $this->getName())."] ".$msg);
+    protected function log(string $level, string $msg)
+    {
+        $this->plugin?->getLogger()->log($level, "[" . ($this->isMinion ? "Minion$this->minionId " . $this->getName() : $this->getName()) . "] " . $msg);
     }
 
     public function getName(): string
@@ -380,10 +408,11 @@ class Boss extends Living
 
     public function setNameTag(string $name): void
     {
-        if ($this->getNameTag() === "")
+        if ($this->getNameTag() === "") {
             parent::setNameTag($name);
-        else
+        } else {
             $this->plugin?->getLogger()->logException(new Exception("Boss name tag should not be modified"));
+        }
     }
 
     public function sendSpawnPacket(Player $player): void
@@ -422,7 +451,10 @@ class Boss extends Living
                 $this->getId(),
                 $this->networkId,
                 $this->location->asVector3(),
-                $this->getMotion(), $this->location->pitch, $this->location->yaw, $this->location->yaw,
+                $this->getMotion(),
+                $this->location->pitch,
+                $this->location->yaw,
+                $this->location->yaw,
                 array_map(function (Attribute $attr): NetworkAttribute {
                     return new NetworkAttribute($attr->getId(), $attr->getMinValue(), $attr->getMaxValue(), $attr->getValue(), $attr->getDefaultValue());
                 }, $this->attributeMap->getAll()),
@@ -436,7 +468,9 @@ class Boss extends Living
 
     public function onUpdate(int $currentTick): bool
     {
-        if ($this->knockbackTicks > 0) $this->knockbackTicks--;
+        if ($this->knockbackTicks > 0) {
+            $this->knockbackTicks--;
+        }
         if ($this->isAlive()) {
             $player = $this->getTargetEntity();
             if (!$player instanceof Living && $this->autoAttack) {
@@ -460,8 +494,9 @@ class Boss extends Living
                         $this->setTargetEntity(null);
                     }
                 } else {
-                    if(!$this->gravityEnabled)
+                    if (!$this->gravityEnabled) {
                         $this->resetFallDistance();
+                    }
                     if (!$this->onGround && $this->gravityEnabled) {
                         if ($this->motion->y > -$this->gravity * 4) {
                             $this->motion->y = -$this->gravity * 4;
@@ -479,8 +514,9 @@ class Boss extends Living
                         } else {
                             $diff = abs($x) + abs($z);
                             $this->motion->x = $this->speed * 0.15 * ($x / $diff);
-                            if (!$this->gravityEnabled)
+                            if (!$this->gravityEnabled) {
                                 $this->motion->y = $this->speed * 0.15 * ($y / $diff);
+                            }
                             $this->motion->z = $this->speed * 0.15 * ($z / $diff);
                         }
                         $this->location->yaw = rad2deg(atan2(-$x, $z));
@@ -491,7 +527,7 @@ class Boss extends Living
                         $this->move($this->motion->x, $this->motion->y, $this->motion->z);
                         if ($this->isCollidedHorizontally) {
                             //$this->jump();
-                            $this->motion->y = ($this->gravityEnabled ? 0 : mt_rand(0,1)) === 0 ? $this->jumpVelocity : -$this->jumpVelocity;
+                            $this->motion->y = ($this->gravityEnabled ? 0 : mt_rand(0, 1)) === 0 ? $this->jumpVelocity : -$this->jumpVelocity;
                         }
                         $dist = $this->location->distance($player->location);
                         if (!empty($this->projectileOptions["networkId"]) || !empty($this->projectileOptions["particle"])) {
@@ -508,7 +544,7 @@ class Boss extends Living
                             }
                         }
                         if ($this->attackDelay > $this->attackRate) {
-                            if($this->getTargetEntity()->location->distance($this->location) < $this->attackRange){
+                            if ($this->getTargetEntity()->location->distance($this->location) < $this->attackRange) {
                                 $this->attackDelay = 0;
                                 $ev = new EntityDamageByEntityEvent($this, $this->getTargetEntity(), EntityDamageEvent::CAUSE_ENTITY_ATTACK, $this->attackDamage);
                                 $player->attack($ev);
@@ -525,15 +561,17 @@ class Boss extends Living
                             }*/
                         }
                         $this->attackDelay++;
-                    } else
+                    } else {
                         $this->move($this->motion->x, $this->motion->y, $this->motion->z);
+                    }
 
                     foreach ($this->minionOptions as $id => $option) {
-                        if (!isset($this->minionSpawnDelay[$id]))
+                        if (!isset($this->minionSpawnDelay[$id])) {
                             $this->minionSpawnDelay[$id] = 0;
+                        }
                         if ($this->minionSpawnDelay[$id] > $option["spawnInterval"]) {
                             $this->minionSpawnDelay[$id] = 0;
-                            $this->spawnMinion($id,$option);
+                            $this->spawnMinion($id, $option);
                         }
                         $this->minionSpawnDelay[$id]++;
                     }
@@ -554,9 +592,10 @@ class Boss extends Living
         return !$this->closed;
     }
 
-    function spawnMinion(int $id,array $option): ?Boss{
+    public function spawnMinion(int $id, array $option): ?Boss
+    {
         $minion = $this->plugin->spawnBoss($option["name"]);
-        if($minion instanceof Boss) {
+        if ($minion instanceof Boss) {
             try {
                 $data = $this->plugin->data->get($option["name"]);
                 $data["x"] = $this->location->x + mt_rand(-$option["spawnRange"], $option["spawnRange"]);
@@ -580,8 +619,9 @@ class Boss extends Living
             $minion->teleport($minion->spawnPos);
             $minion->spawnToAll();
             return $minion;
-        }else
-            $this->log(LogLevel::WARNING,"Failed to spawn minion $id, $minion");
+        } else {
+            $this->log(LogLevel::WARNING, "Failed to spawn minion $id, $minion");
+        }
         return null;
     }
 
@@ -592,13 +632,15 @@ class Boss extends Living
         }
         parent::attack($source);
         if (!$source->isCancelled() && $source instanceof EntityDamageByEntityEvent) {
-            if(strlen($this->displayHealth)){
+            if (strlen($this->displayHealth)) {
                 $length = 20;
                 $green = (int)($this->getHealth() / $this->getMaxHealth() * $length);
-                $this->setScoreTag(str_replace(
-                    ["{HEALTH}","{MAX_HEALTH}","{BAR}"],
-                    [$this->getHealth(),$this->getMaxHealth(),str_repeat('|',$green).TextFormat::GRAY.str_repeat('|',$length - $green)],
-                    $this->displayHealth)
+                $this->setScoreTag(
+                    str_replace(
+                        ["{HEALTH}", "{MAX_HEALTH}", "{BAR}"],
+                        [$this->getHealth(), $this->getMaxHealth(), str_repeat('|', $green) . TextFormat::GRAY . str_repeat('|', $length - $green)],
+                        $this->displayHealth
+                    )
                 );
             }
             $dmg = $source->getDamager();
@@ -614,40 +656,45 @@ class Boss extends Living
     {
         parent::kill();
         $player = null;
-        if ($this->lastDamageCause instanceof EntityDamageByEntityEvent && $this->lastDamageCause->getDamager() instanceof Player)
+        if ($this->lastDamageCause instanceof EntityDamageByEntityEvent && $this->lastDamageCause->getDamager() instanceof Player) {
             $player = $this->lastDamageCause->getDamager();
+        }
         $this->plugin->executeCommands($this, $player);
         arsort($this->topDamage);
-        foreach ($this->topRewards as $topX => $rewards){
+        foreach ($this->topRewards as $topX => $rewards) {
             $i = 0;
-            foreach ($this->topDamage as $name => $damage){
-                if($i++ === $topX){
-                    foreach ($rewards as $reward){
+            foreach ($this->topDamage as $name => $damage) {
+                if ($i++ === $topX) {
+                    foreach ($rewards as $reward) {
                         $player = $this->server->getPlayerExact($name);
-                        if($reward instanceof Item)
+                        if ($reward instanceof Item) {
                             $player?->getInventory()->addItem($reward);
-                        else
-                            $this->plugin->executeCommands($this,$player,[$reward]);
+                        } else {
+                            $this->plugin->executeCommands($this, $player, [$reward]);
+                        }
                     }
                     break;
                 }
             }
         }
-        if (!$this->isMinion && $this->respawnTime >= 0)
+        if (!$this->isMinion && $this->respawnTime >= 0) {
             $this->plugin->respawn($this->getName(), $this->respawnTime);
+        }
     }
 
     protected function onDeath(): void
     {
-        if($this->spreadDrops)
+        if ($this->spreadDrops) {
             $id = Entity::nextRuntimeId() + 1;
+        }
         parent::onDeath();
-        if(isset($id)) {
+        if (isset($id)) {
             $now = Entity::nextRuntimeId();
             for ($i = $id; $i < $now; $i++) {
                 $e = $this->getWorld()->getEntity($i);
-                if($e instanceof ItemEntity || $e instanceof ExperienceOrb)
+                if ($e instanceof ItemEntity || $e instanceof ExperienceOrb) {
                     $e->setMotion($e->getMotion()->multiply(3));
+                }
             }
         }
     }
@@ -661,7 +708,9 @@ class Boss extends Living
     {
         $drops = array();
         foreach ($this->drops as $drop) {
-            if (mt_rand(1, 100) <= $drop[1]) $drops[] = $drop[0];
+            if (mt_rand(1, 100) <= $drop[1]) {
+                $drops[] = $drop[0];
+            }
         }
         return $drops;
     }

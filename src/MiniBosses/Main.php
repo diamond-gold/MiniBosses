@@ -27,7 +27,6 @@ use ReflectionClass;
 
 class Main extends PluginBase implements Listener
 {
-
     public Config $data;
     private array $chunkLoadCache = [];
 
@@ -43,9 +42,11 @@ class Main extends PluginBase implements Listener
         $this->getLogger()->info("Checking config...");
         $this->data = new Config($this->getDataFolder() . "Bosses.yml", Config::YAML);
         foreach ($this->data->getAll() as $name => $bossData) {
-            if(!($bossData["enabled"] ?? true)) continue;
+            if (!($bossData["enabled"] ?? true)) {
+                continue;
+            }
             $idTag = isset($bossData["network-id"]) ? "network-id" : "networkId";
-            if(isset($bossData[$idTag])) {
+            if (isset($bossData[$idTag])) {
                 if (is_int($bossData[$idTag])) {
                     $networkId = LegacyEntityIdToStringIdMap::getInstance()->getLegacyToStringMap()[$bossData[$idTag]] ?? ($bossData[$idTag] === 63 ? EntityIds::PLAYER : null);
                     if ($networkId === null) {
@@ -58,19 +59,19 @@ class Main extends PluginBase implements Listener
                         $this->getLogger()->info("Converted legacy int network id for boss $name, " . $bossData[$idTag] . " => $networkId");
                         $bossData['networkId'] = $networkId;
                         unset($bossData['network-id']);
-                        $this->data->set($name,$bossData);
+                        $this->data->set($name, $bossData);
                     }
-                } else if (is_string($bossData[$idTag])) {
+                } elseif (is_string($bossData[$idTag])) {
                     if (!str_starts_with($bossData["networkId"], "minecraft:")) {
                         $this->getLogger()->info("Updated networkId of boss $name " . $bossData["networkId"] . " => minecraft:" . $bossData["networkId"]);
                         $bossData["networkId"] = "minecraft:" . $bossData["networkId"];
-                        $this->data->set($name,$bossData);
+                        $this->data->set($name, $bossData);
                     }
                     $constants = (new ReflectionClass(EntityIds::class))->getConstants();
                     if (!in_array($bossData["networkId"], $constants, true)) {
                         $this->getLogger()->error("Unknown networkId " . $bossData["networkId"] . " for boss $name");
                         $bossData['enabled'] = false;
-                        $this->data->set($name,$bossData);
+                        $this->data->set($name, $bossData);
                         $this->getLogger()->warning("Disabled boss $name, set \"enabled\" to true to enable");
                     }
                 }
@@ -78,7 +79,7 @@ class Main extends PluginBase implements Listener
             if (isset($bossData["level"])) {
                 $bossData['world'] = $bossData['level'];
                 unset($bossData['level']);
-                $this->data->set($name,$bossData);
+                $this->data->set($name, $bossData);
                 $this->getLogger()->info("Renamed level to world in config for boss $name");
             }
             if (isset($bossData["minions"])) {
@@ -86,7 +87,7 @@ class Main extends PluginBase implements Listener
                     if (!$this->data->exists($minion["name"])) {
                         $this->getLogger()->error("Boss minion $id of boss $name has non existent boss name \"" . $minion["name"] . "\" set");
                         $bossData['enabled'] = false;
-                        $this->data->set($name,$bossData);
+                        $this->data->set($name, $bossData);
                         $this->getLogger()->warning("Disabled boss $name, set \"enabled\" to true to enable");
                     }
                 }
@@ -96,23 +97,24 @@ class Main extends PluginBase implements Listener
         $this->getLogger()->info("Testing all bosses...");
         $tested = 0;
         $loc = Location::fromObject($this->getServer()->getWorldManager()->getDefaultWorld()->getSpawnLocation(), $this->getServer()->getWorldManager()->getDefaultWorld());
-        foreach($this->data->getAll() as $name => $data) {
-            if($data["enabled"] ?? true) {
+        foreach ($this->data->getAll() as $name => $data) {
+            if ($data["enabled"] ?? true) {
                 $tested++;
                 $boss = (new Boss($loc, CompoundTag::create()->setString("CustomName", $name)));
-                if(!empty($boss->projectileOptions["networkId"]) || !empty($boss->projectileOptions["particle"])) {
+                if (!empty($boss->projectileOptions["networkId"]) || !empty($boss->projectileOptions["particle"])) {
                     $projectile = (new BossProjectile($loc, $boss));
-                    if($projectile->isFlaggedForDespawn()){
+                    if ($projectile->isFlaggedForDespawn()) {
                         $boss->flagForDespawn();
                     }
                     $projectile->flagForDespawn();
                 }
-                foreach ($boss->minionOptions as $id => $option){
-                    $minion = $boss->spawnMinion($id,$option);
-                    if(!$minion)
+                foreach ($boss->minionOptions as $id => $option) {
+                    $minion = $boss->spawnMinion($id, $option);
+                    if (!$minion) {
                         $boss->flagForDespawn();
+                    }
                 }
-                if($boss->isFlaggedForDespawn()){
+                if ($boss->isFlaggedForDespawn()) {
                     $data['enabled'] = false;
                     $this->data->set($name, $data);
                     $this->getLogger()->warning("Disabled boss $name, set \"enabled\" to true to enable");
@@ -121,33 +123,37 @@ class Main extends PluginBase implements Listener
             }
         }
         if ($this->data->hasChanged()) {
-            copy($this->data->getPath(),$this->data->getPath().".bak");
+            copy($this->data->getPath(), $this->data->getPath() . ".bak");
             $this->data->save();
         }
-        $this->getLogger()->info("Done! Tested $tested/".count($this->data->getAll())." bosses");
+        $this->getLogger()->info("Done! Tested $tested/" . count($this->data->getAll()) . " bosses");
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
-        foreach ($this->getServer()->getWorldManager()->getWorlds() as $world){
-            foreach ($world->getLoadedChunks() as $hash => $chunk){
-                World::getXZ($hash,$x,$z);
-                $this->ChunkLoadEvent(new ChunkLoadEvent($world,$x,$z,$chunk,false));
+        foreach ($this->getServer()->getWorldManager()->getWorlds() as $world) {
+            foreach ($world->getLoadedChunks() as $hash => $chunk) {
+                World::getXZ($hash, $x, $z);
+                $this->ChunkLoadEvent(new ChunkLoadEvent($world, $x, $z, $chunk, false));
             }
         }
     }
 
     protected function onDisable(): void
     {
-        foreach ($this->getServer()->getWorldManager()->getWorlds() as $world)
-            foreach ($world->getEntities() as $entity)
-                if($entity instanceof Boss || $entity instanceof BossProjectile)
+        foreach ($this->getServer()->getWorldManager()->getWorlds() as $world) {
+            foreach ($world->getEntities() as $entity) {
+                if ($entity instanceof Boss || $entity instanceof BossProjectile) {
                     $entity->flagForDespawn();
+                }
+            }
+        }
     }
 
     public function ChunkLoadEvent(ChunkLoadEvent $event)
     {
         if (empty($this->chunkLoadCache)) {
             foreach ($this->data->getAll() as $name => $data) {
-                if($data["enabled"] ?? true)
+                if ($data["enabled"] ?? true) {
                     $this->chunkLoadCache[$data["world"]][($data["x"] >> 4) . " " . ($data["z"] >> 4)] = $name;
+                }
             }
         }
         if (isset($this->chunkLoadCache[$event->getWorld()->getFolderName()][$event->getChunkX() . " " . $event->getChunkZ()])) {
@@ -160,16 +166,19 @@ class Main extends PluginBase implements Listener
         $argsCount = count($args);
         switch (array_shift($args)) {
             case "create":
-                if (!($sender instanceof Player)) $sender->sendMessage("Please run in-game");
-                elseif ($argsCount >= 3) {
+                if (!($sender instanceof Player)) {
+                    $sender->sendMessage("Please run in-game");
+                } elseif ($argsCount >= 3) {
                     $networkId = array_shift($args);
                     $name = implode(' ', $args);
                     if ($this->data->get($name, null) === null) {
                         if (is_numeric($networkId)) {
                             $sender->sendMessage("Legacy int network id may not be supported in the future, please use string id instead");
-                            $networkId = (int) $networkId;
+                            $networkId = (int)$networkId;
                         } else {
-                            if (!str_starts_with($networkId, "minecraft:")) $networkId = "minecraft:" . $networkId;
+                            if (!str_starts_with($networkId, "minecraft:")) {
+                                $networkId = "minecraft:" . $networkId;
+                            }
                             $constants = (new ReflectionClass(EntityIds::class))->getConstants();
                             if (!in_array($networkId, $constants, true)) {
                                 $sender->sendMessage(TF::RED . "Unrecognised Network ID or Entity type $networkId");
@@ -192,40 +201,49 @@ class Main extends PluginBase implements Listener
                             }, $sender->getArmorInventory()->getContents(true)),
                             "minions" => [["name" => $name, "spawnInterval" => 100, "spawnRange" => 5, "health" => 1, "gravity" => 0, "drops" => "", "minions" => [], "commands" => []]]
                         ]);
-                        if ($networkId === EntityIds::PLAYER)
+                        if ($networkId === EntityIds::PLAYER) {
                             $data["skin"] = ["Name" => $skin->getSkinId(), "Data" => bin2hex($skin->getSkinData()), "CapeData" => bin2hex($skin->getCapeData()), "GeometryName" => $skin->getGeometryName(), "GeometryData" => json_encode($skin->getGeometryData())];
+                        }
                         $this->data->set($name, $data);
                         $this->data->save();
                         $this->chunkLoadCache = [];
                         $sender->sendMessage(TF::GREEN . "Successfully created MiniBoss: $name");
                         $sender->sendMessage("Please set \"enabled\" to true after configuration");
-                    } else
+                    } else {
                         $sender->sendMessage(TF::RED . "That MiniBoss already exists!");
-                } else
+                    }
+                } else {
                     $sender->sendMessage(TF::RED . "Usage: /minibosses create networkId name");
+                }
                 break;
             case "spawn":
                 if ($argsCount >= 2) {
                     $name = implode(' ', $args);
                     if ($this->data->get($name, null) !== null) {
                         $ret = $this->spawnBoss($name);
-                        if ($ret instanceof Boss)
+                        if ($ret instanceof Boss) {
                             $sender->sendMessage(TF::GREEN . "Successfully spawned $name");
-                        else
+                        } else {
                             $sender->sendMessage(TF::RED . "Error spawning $name : $ret");
-                    } else
+                        }
+                    } else {
                         $sender->sendMessage(TF::RED . "That MiniBoss doesn't exist!");
-                } else
+                    }
+                } else {
                     $sender->sendMessage(TF::RED . "Usage: /minibosses spawn name");
+                }
                 break;
             case "despawn":
                 if ($argsCount >= 2) {
                     $name = implode(' ', $args);
                     if ($this->data->get($name, null) !== null) {
-                        foreach ($this->getServer()->getWorldManager()->getWorlds() as $world)
-                            foreach ($world->getEntities() as $entity)
-                                if ($entity instanceof Boss && $entity->getName() === $name)
+                        foreach ($this->getServer()->getWorldManager()->getWorlds() as $world) {
+                            foreach ($world->getEntities() as $entity) {
+                                if ($entity instanceof Boss && $entity->getName() === $name) {
                                     $entity->flagForDespawn();
+                                }
+                            }
+                        }
                         $sender->sendMessage(TF::GREEN . "Successfully despawned $name");
                         static $despawnWarned = [];
                         if (!isset($despawnWarned[$sender->getName()])) {
@@ -233,10 +251,12 @@ class Main extends PluginBase implements Listener
                             $sender->sendMessage(TF::YELLOW . "This warning will not show again until the server is restarted");
                             $despawnWarned[$sender->getName()] = true;
                         }
-                    } else
+                    } else {
                         $sender->sendMessage(TF::RED . "That MiniBoss doesn't exist!");
-                } else
+                    }
+                } else {
                     $sender->sendMessage(TF::RED . "Usage: /minibosses despawn name");
+                }
                 break;
             case "toggleEnabled":
                 if ($argsCount >= 2) {
@@ -259,31 +279,36 @@ class Main extends PluginBase implements Listener
                         $this->data->save();
                         $this->chunkLoadCache = [];
                         $sender->sendMessage(TF::GREEN . "Successfully " . ($enabled ? "enabled" : "disabled") . " $name");
-                    } else
+                    } else {
                         $sender->sendMessage(TF::RED . "That MiniBoss doesn't exist!");
-                } else
+                    }
+                } else {
                     $sender->sendMessage(TF::RED . "Usage: /minibosses enable name");
+                }
                 break;
             case "delete":
                 if ($argsCount >= 2) {
-                    $name = implode(' ',$args);
+                    $name = implode(' ', $args);
                     if (($data = $this->data->get($name, null)) !== null) {
                         if ($this->getServer()->getWorldManager()->loadWorld($data["world"])) {
                             $l = $this->getServer()->getWorldManager()->getWorldByName($data["world"]);
                             $l->loadChunk($data["x"] >> 4, $data["z"] >> 4);
                             foreach ($l->getChunkEntities($data["x"] >> 4, $data["z"] >> 4) as $e) {
-                                if ($e instanceof Boss && $e->getName() === $name)
+                                if ($e instanceof Boss && $e->getName() === $name) {
                                     $e->flagForDespawn();
+                                }
                             }
                         }
                         $this->data->remove($name);
                         $this->data->save();
                         $this->chunkLoadCache = [];
                         $sender->sendMessage(TF::GREEN . "Successfully removed MiniBoss: $name");
-                    } else
+                    } else {
                         $sender->sendMessage(TF::RED . "That MiniBoss doesn't exist!");
-                } else
+                    }
+                } else {
                     $sender->sendMessage(TF::RED . "Usage: /minibosses delete name");
+                }
                 break;
             case "list":
                 $sender->sendMessage(TF::GREEN . "----MiniBosses----");
@@ -302,15 +327,19 @@ class Main extends PluginBase implements Listener
     public function spawnBoss(string $name): Boss|string
     {
         $data = $this->data->get($name);
-        if (!$data)
+        if (!$data) {
             return "No data, Boss does not exist";
-        if(!($data["enabled"] ?? true))
+        }
+        if (!($data["enabled"] ?? true)) {
             return "Boss disabled";
-        if (!$this->getServer()->getWorldManager()->loadWorld($data["world"]))
+        }
+        if (!$this->getServer()->getWorldManager()->loadWorld($data["world"])) {
             return "Failed to load world " . $data["world"];
+        }
         $pos = new Location($data["x"], $data["y"], $data["z"], $this->getServer()->getWorldManager()->getWorldByName($data["world"]), 0, 0);
-        if($pos->getWorld()->loadChunk($pos->x >> 4, $pos->z >> 4) === null)
-            return "Failed to load chunk at ".$pos." (is it generated yet?)";
+        if ($pos->getWorld()->loadChunk($pos->x >> 4, $pos->z >> 4) === null) {
+            return "Failed to load chunk at " . $pos . " (is it generated yet?)";
+        }
         $ent = new Boss($pos, CompoundTag::create()->setString("CustomName", $name));
         $ent->spawnToAll();
         return $ent;
@@ -318,27 +347,32 @@ class Main extends PluginBase implements Listener
 
     public function respawn(string $name, int $time)
     {
-        if ($this->data->get($name)) $this->getScheduler()->scheduleDelayedTask(new ClosureTask(function () use ($name): void {
-            $result = $this->spawnBoss($name);
-            if (!$result instanceof Boss)
-                $this->getLogger()->error("Boss $name failed to respawn: " . $result);
-        }), $time);
+        if ($this->data->get($name)) {
+            $this->getScheduler()->scheduleDelayedTask(new ClosureTask(function () use ($name): void {
+                $result = $this->spawnBoss($name);
+                if (!$result instanceof Boss) {
+                    $this->getLogger()->error("Boss $name failed to respawn: " . $result);
+                }
+            }), $time);
+        }
     }
 
-    function executeCommands(Boss $boss, ?Player $p, array $commands = [])
+    public function executeCommands(Boss $boss, ?Player $p, array $commands = [])
     {
         $name = $boss->getNameTag();
-        if(empty($commands)) {
+        if (empty($commands)) {
             $data = $this->data->get($name);
             if ($boss->isMinion) {
                 $data = $data["minions"][$boss->minionId] ?? [];
             }
-            if(isset($data["commands"]) && is_array($data["commands"])){
+            if (isset($data["commands"]) && is_array($data["commands"])) {
                 $commands = $data["commands"];
             }
         }
         foreach ($commands as $command) {
-            if (str_contains($command, "{PLAYER}") && $p === null) continue;
+            if (str_contains($command, "{PLAYER}") && $p === null) {
+                continue;
+            }
             $command = str_replace(["{PLAYER}", "{BOSS}"], [$p->getName(), $name], $command);
             if (str_starts_with($command, "CONSOLE ")) {
                 $command = substr($command, strlen("CONSOLE "));
@@ -351,10 +385,13 @@ class Main extends PluginBase implements Listener
                     $command = substr($command, strlen("OP "));
                     $p->setBasePermission(DefaultPermissions::ROOT_OPERATOR, true);
                 }
-            } else continue;
+            } else {
+                continue;
+            }
             $this->getServer()->dispatchCommand($sender, $command);
-            if (isset($runAsOp) && $runAsOp && isset($op) && !$op)
+            if (isset($runAsOp) && $runAsOp && isset($op) && !$op) {
                 $p->setBasePermission(DefaultPermissions::ROOT_OPERATOR, false);
+            }
         }
     }
 }

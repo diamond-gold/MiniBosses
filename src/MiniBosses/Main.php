@@ -210,13 +210,59 @@ class Main extends PluginBase implements Listener
                     if ($this->data->get($name, null) !== null) {
                         $ret = $this->spawnBoss($name);
                         if ($ret instanceof Boss)
-                            $sender->sendMessage("Successfully spawned $name");
+                            $sender->sendMessage(TF::GREEN . "Successfully spawned $name");
                         else
                             $sender->sendMessage(TF::RED . "Error spawning $name : $ret");
                     } else
                         $sender->sendMessage(TF::RED . "That MiniBoss doesn't exist!");
                 } else
                     $sender->sendMessage(TF::RED . "Usage: /minibosses spawn name");
+                break;
+            case "despawn":
+                if ($argsCount >= 2) {
+                    $name = implode(' ', $args);
+                    if ($this->data->get($name, null) !== null) {
+                        foreach ($this->getServer()->getWorldManager()->getWorlds() as $world)
+                            foreach ($world->getEntities() as $entity)
+                                if ($entity instanceof Boss && $entity->getName() === $name)
+                                    $entity->flagForDespawn();
+                        $sender->sendMessage(TF::GREEN . "Successfully despawned $name");
+                        static $despawnWarned = [];
+                        if (!isset($despawnWarned[$sender->getName()])) {
+                            $sender->sendMessage(TF::YELLOW . "Warning: The Boss will still spawn when the chunk is loaded again");
+                            $sender->sendMessage(TF::YELLOW . "This warning will not show again until the server is restarted");
+                            $despawnWarned[$sender->getName()] = true;
+                        }
+                    } else
+                        $sender->sendMessage(TF::RED . "That MiniBoss doesn't exist!");
+                } else
+                    $sender->sendMessage(TF::RED . "Usage: /minibosses despawn name");
+                break;
+            case "toggleEnabled":
+                if ($argsCount >= 2) {
+                    $name = implode(' ', $args);
+                    $data = $this->data->get($name, null);
+                    if ($data !== null) {
+                        $enabled = $data['enabled'] ?? true;
+                        static $toggleWarned = [];
+                        if (!$enabled && !isset($toggleWarned[$sender->getName()])) {
+                            $sender->sendMessage(TF::YELLOW . "Warning: The Boss may not have been checked/tested during startup and may contain errors");
+                            $sender->sendMessage(TF::YELLOW . "The Boss may result in unknown behavior if so");
+                            $sender->sendMessage(TF::YELLOW . "Run the command again if you wish to continue anyway");
+                            $sender->sendMessage(TF::YELLOW . "This warning will not show again until the server is restarted");
+                            $toggleWarned[$sender->getName()] = true;
+                            break;
+                        }
+                        $enabled = !$enabled;
+                        $data['enabled'] = $enabled;
+                        $this->data->set($name, $data);
+                        $this->data->save();
+                        $this->chunkLoadCache = [];
+                        $sender->sendMessage(TF::GREEN . "Successfully " . ($enabled ? "enabled" : "disabled") . " $name");
+                    } else
+                        $sender->sendMessage(TF::RED . "That MiniBoss doesn't exist!");
+                } else
+                    $sender->sendMessage(TF::RED . "Usage: /minibosses enable name");
                 break;
             case "delete":
                 if ($argsCount >= 2) {
@@ -241,7 +287,11 @@ class Main extends PluginBase implements Listener
                 break;
             case "list":
                 $sender->sendMessage(TF::GREEN . "----MiniBosses----");
-                $sender->sendMessage(implode(', ', array_keys($this->data->getAll())));
+                $list = "";
+                foreach ($this->data->getAll() as $name => $data) {
+                    $list .= ($list !== "" ? ", " : "") . (($data['enabled'] ?? true) ? TF::GREEN : TF::RED) . $name;
+                }
+                $sender->sendMessage($list);
                 break;
             default:
                 return false;
@@ -260,7 +310,7 @@ class Main extends PluginBase implements Listener
             return "Failed to load world " . $data["world"];
         $pos = new Location($data["x"], $data["y"], $data["z"], $this->getServer()->getWorldManager()->getWorldByName($data["world"]), 0, 0);
         if($pos->getWorld()->loadChunk($pos->x >> 4, $pos->z >> 4) === null)
-            return "Failed to load chunk at ".$pos;
+            return "Failed to load chunk at ".$pos." (is it generated yet?)";
         $ent = new Boss($pos, CompoundTag::create()->setString("CustomName", $name));
         $ent->spawnToAll();
         return $ent;

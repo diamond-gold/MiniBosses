@@ -9,7 +9,7 @@ website: https://github.com/diamond-gold/MiniBosses
 commands:
   minibosses:
     description: Manage MiniBosses
-    usage: "/minibosses list OR /minibosses create <networkId: EntityType> <name: message> OR /minibosses spawn <name: message> OR /minibosses delete <name: message>"
+    usage: "/minibosses list OR /minibosses create <networkId: EntityType> <name: message> OR /minibosses spawn <name: message> OR /minibosses despawn <name: message> OR /minibosses delete <name: message> OR /minibosses toggleEnabled <name: message>"
     permission: minibosses.command
 permissions:
   minibosses.command:

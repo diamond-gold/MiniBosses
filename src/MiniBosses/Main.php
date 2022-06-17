@@ -138,7 +138,7 @@ class Main extends PluginBase implements Listener
     {
         foreach ($this->getServer()->getWorldManager()->getWorlds() as $world)
             foreach ($world->getEntities() as $entity)
-                if($entity instanceof Boss)
+                if($entity instanceof Boss || $entity instanceof BossProjectile)
                     $entity->flagForDespawn();
     }
 

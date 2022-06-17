@@ -213,13 +213,13 @@ class Boss extends Living
                 }
             }catch (Exception $e){
                 $this->log(LogLevel::ERROR,"Invalid skin: ".$e->getMessage());
-                $this->flagForDespawn();
+                throw $e;
             }
         }
         $this->autoAttack = $this->validateType($data,"autoAttack","boolean");
         $this->setImmobile();
-        $this->setNameTagAlwaysVisible(true);
-        $this->setNameTagVisible(true);
+        $this->setNameTagAlwaysVisible();
+        $this->setNameTagVisible();
         if (isset($data["health"])) {
             $this->validateType($data,"health","double");
             $this->setMaxHealth($data["health"]);

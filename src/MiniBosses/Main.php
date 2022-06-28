@@ -39,7 +39,7 @@ class Main extends PluginBase implements Listener
             return new BossProjectile(EntityDataHelper::parseLocation($tag, $world), null, $tag);
         }, ["BossProjectile"]);
 
-        $this->getLogger()->info("Checking config...");
+        $this->getLogger()->debug("Checking config...");
         $this->data = new Config($this->getDataFolder() . "Bosses.yml", Config::YAML);
         foreach ($this->data->getAll() as $name => $bossData) {
             if (!($bossData["enabled"] ?? true)) {
@@ -94,7 +94,7 @@ class Main extends PluginBase implements Listener
             }
         }
 
-        $this->getLogger()->info("Testing all bosses...");
+        $this->getLogger()->debug("Testing all bosses...");
         $tested = 0;
         $loc = Location::fromObject($this->getServer()->getWorldManager()->getDefaultWorld()->getSpawnLocation(), $this->getServer()->getWorldManager()->getDefaultWorld());
         foreach ($this->data->getAll() as $name => $data) {
@@ -126,7 +126,7 @@ class Main extends PluginBase implements Listener
             copy($this->data->getPath(), $this->data->getPath() . ".bak");
             $this->data->save();
         }
-        $this->getLogger()->info("Done! Tested $tested/" . count($this->data->getAll()) . " bosses");
+        $this->getLogger()->debug("Done! Tested $tested/" . count($this->data->getAll()) . " bosses");
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
         foreach ($this->getServer()->getWorldManager()->getWorlds() as $world) {
             foreach ($world->getLoadedChunks() as $hash => $chunk) {

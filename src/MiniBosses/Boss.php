@@ -80,6 +80,7 @@ class Boss extends Living
     public array $topRewards = [];
     public array $topDamage = [];
     public string $displayHealth;
+    public bool $movesByJumping;
 
     const PROJECTILE_OPTIONS_TYPE = [
         "networkId" => "string",
@@ -144,7 +145,8 @@ class Boss extends Living
         "hurtModifiers" => [],
         "knockbackResistance" => 0,
         "minions" => [],
-        "topRewards" => []
+        "topRewards" => [],
+        "movesByJumping" => false,
     ];
 
     public function initEntity(CompoundTag $nbt): void
@@ -305,6 +307,10 @@ class Boss extends Living
                     }
                 }
             }
+        }
+        $this->movesByJumping = $this->validateType($data, "movesByJumping", "boolean");
+        if ($this->movesByJumping && $this->gravity <= 0) {
+            $this->log(LogLevel::WARNING, "movesByJumping is enabled but gravity is negative or zero, this will not work");
         }
         $this->displayHealth = $this->validateType($data, "displayHealth", "string");
         if ($validateMinions) {
@@ -516,6 +522,8 @@ class Boss extends Living
                             $this->motion->x = $this->speed * 0.15 * ($x / $diff);
                             if (!$this->gravityEnabled) {
                                 $this->motion->y = $this->speed * 0.15 * ($y / $diff);
+                            } elseif ($this->onGround && $this->movesByJumping) {
+                                $this->motion->y = $this->jumpVelocity;
                             }
                             $this->motion->z = $this->speed * 0.15 * ($z / $diff);
                         }

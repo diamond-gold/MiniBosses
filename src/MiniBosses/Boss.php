@@ -72,8 +72,10 @@ class Boss extends Living
     public bool $spreadDrops;
     public int $xpDropAmount;
     public array $projectileOptions = [];
+    /** @var float[] */
     public array $hurtModifiers = [];
     public array $minionOptions = [];
+    /** @var int[] */
     public array $minionSpawnDelay = [];
     public bool $isMinion = false;
     public int $minionId = -1;
@@ -82,6 +84,8 @@ class Boss extends Living
     public string $displayHealth;
     public bool $movesByJumping;
     public int $despawnAfter;
+    /** @var int[]  */
+    public array $projectileDelay = [];
 
     const PROJECTILE_OPTIONS_TYPE = [
         "networkId" => "string",
@@ -148,7 +152,7 @@ class Boss extends Living
         "spreadDrops" => false,
         "xpDrop" => 0,
         "commands" => [],
-        "projectile" => [],
+        "projectiles" => [],
         "armor" => [],
         "hurtModifiers" => [],
         "knockbackResistance" => 0,
@@ -252,27 +256,30 @@ class Boss extends Living
         $this->gravityEnabled = $this->gravity != 0;
         $this->spreadDrops = $this->validateType($data, "spreadDrops", "boolean");
         $this->xpDropAmount = $this->validateType($data, "xpDrop", "integer");
-        $this->projectileOptions = $this->validateType($data, "projectile", "array");
-        if (isset($this->projectileOptions['networkId']) || isset($this->projectileOptions['particle'])) {
-            foreach (self::PROJECTILE_OPTIONS_TYPE as $option => $type) {
-                $this->projectileOptions[$option] = $this->validateType($this->projectileOptions, $option, $type, self::PROJECTILE_OPTIONS_DEFAULT[$option] ?? null);
-            }
-            if (!empty($this->projectileOptions["networkId"])) {
-                if (!str_starts_with($this->projectileOptions["networkId"], "minecraft:")) {
-                    $this->projectileOptions["networkId"] = "minecraft:" . $this->projectileOptions["networkId"];
+        $this->projectileOptions = $this->validateType($data, "projectiles", "array");
+        foreach ($this->projectileOptions as $id => $projectileOptions) {
+            if (isset($projectileOptions['networkId']) || isset($projectileOptions['particle'])) {
+                foreach (self::PROJECTILE_OPTIONS_TYPE as $option => $type) {
+                    $projectileOptions[$option] = $this->validateType($projectileOptions, $option, $type, self::PROJECTILE_OPTIONS_DEFAULT[$option] ?? null, "Projectile $id");
                 }
-                $constants = (new ReflectionClass(EntityIds::class))->getConstants();
-                if (!in_array($this->projectileOptions["networkId"], $constants, true)) {
-                    throw new Exception("Unknown projectile entity type " . $this->projectileOptions["networkId"]);
+                if (!empty($projectileOptions["networkId"])) {
+                    if (!str_starts_with($projectileOptions["networkId"], "minecraft:")) {
+                        $projectileOptions["networkId"] = "minecraft:" . $projectileOptions["networkId"];
+                    }
+                    $constants = (new ReflectionClass(EntityIds::class))->getConstants();
+                    if (!in_array($projectileOptions["networkId"], $constants, true)) {
+                        throw new Exception("Projectile $id: Unknown projectile entity type " . $projectileOptions["networkId"]);
+                    }
+                    if ($projectileOptions["networkId"] === EntityIds::PLAYER) {
+                        throw new Exception("Projectile $id: ". EntityIds::PLAYER . " is not a valid projectile entity type, please use other entity");
+                    }
+                } elseif (empty($projectileOptions["particle"])) {
+                    $this->log(LogLevel::WARNING, "Projectile $id is completely invisible");
                 }
-                if ($this->projectileOptions["networkId"] === EntityIds::PLAYER) {
-                    throw new Exception(EntityIds::PLAYER . " is not a valid projectile entity type, please use other entity");
+                if (!empty($projectileOptions["particle"]) && !str_starts_with($projectileOptions["particle"], "minecraft:")) {
+                    $projectileOptions["particle"] = "minecraft:" . $projectileOptions["particle"];
                 }
-            } elseif (empty($this->projectileOptions["particle"])) {
-                $this->log(LogLevel::WARNING, "Projectile is completely invisible");
-            }
-            if (!empty($this->projectileOptions["particle"]) && !str_starts_with($this->projectileOptions["particle"], "minecraft:")) {
-                $this->projectileOptions["particle"] = "minecraft:" . $this->projectileOptions["particle"];
+                $this->projectileOptions[$id] = $projectileOptions;
             }
         }
         foreach ($this->validateType($data, "armor", "array") as $i => $piece) {
@@ -333,7 +340,7 @@ class Boss extends Living
                 }
                 try {
                     foreach (self::MINIONS_OPTIONS_TYPE as $option => $type) {
-                        $this->validateType($minionData, $option, $type, self::MINIONS_OPTIONS_DEFAULT[$option] ?? null);
+                        $this->validateType($minionData, $option, $type, self::MINIONS_OPTIONS_DEFAULT[$option] ?? null, "Minion $id");
                     }
                     $testMinionData = array_merge($minionData, ["x" => 0, "y" => 0, "z" => 0, "world" => "", "networkId" => EntityIds::PIG]);//dummy data that should be supplied by boss
                     $this->parseData($testMinionData);
@@ -352,12 +359,12 @@ class Boss extends Living
      * Throws Exception if data is not expected type and no default value
      * @throws Exception
      */
-    private function validateType(array $data, string $index, string $type, mixed $defaultOverride = null)
+    private function validateType(array $data, string $index, string $type, mixed $defaultOverride = null, string $context = "")
     {
         $default = $defaultOverride ?? self::BOSS_OPTIONS_DEFAULT[$index] ?? null;
         if (!isset($data[$index])) {
             if ($default === null) {
-                throw new SavedDataLoadingException("Missing required data \"$index\" of type $type");
+                throw new SavedDataLoadingException("$context Missing required data \"$index\" of type $type");
             }
             return $default;
         }
@@ -368,7 +375,7 @@ class Boss extends Living
         if ($type === "double") {
             $type = "integer/float/double";
         }
-        throw new SavedDataLoadingException("\"$index\" must be $type, $dataType given");
+        throw new SavedDataLoadingException("$context \"$index\" must be $type, $dataType given");
     }
 
     private function parseItem(string $itemStr): Item
@@ -554,17 +561,24 @@ class Boss extends Living
                             $this->motion->y = ($this->gravityEnabled ? 0 : mt_rand(0, 1)) === 0 ? $this->jumpVelocity : -$this->jumpVelocity;
                         }
                         $dist = $this->location->distance($player->location);
-                        if (!empty($this->projectileOptions["networkId"]) || !empty($this->projectileOptions["particle"])) {
-                            if ($dist >= $this->projectileOptions["fireRangeMin"] && $dist <= $this->projectileOptions["fireRangeMax"] && $this->attackDelay > $this->projectileOptions["attackRate"]) {
-                                $this->attackDelay = 0;
-                                $projectile = new BossProjectile(Location::fromObject(
-                                    $this->getEyePos(),
-                                    $this->getWorld(),
-                                    ($this->location->yaw > 180 ? 360 : 0) - $this->location->yaw,
-                                    -$this->location->pitch
-                                ), $this);
-                                $projectile->setMotion($player->getEyePos()->subtractVector($this->getEyePos())->normalize()->multiply($this->projectileOptions["speed"]));
-                                $projectile->spawnToAll();
+                        foreach ($this->projectileOptions as $id => $projectileOptions) {
+                            if (!empty($projectileOptions["networkId"]) || !empty($projectileOptions["particle"])) {
+                                if (!isset($this->projectileDelay[$id])) {
+                                    $this->projectileDelay[$id] = 0;
+                                }
+                                if ($dist >= $projectileOptions["fireRangeMin"] && $dist <= $projectileOptions["fireRangeMax"] && $this->projectileDelay[$id] > $projectileOptions["attackRate"]) {
+                                    $this->projectileDelay[$id] = 0;
+                                    $projectile = new BossProjectile(Location::fromObject(
+                                        $this->getEyePos(),
+                                        $this->getWorld(),
+                                        ($this->location->yaw > 180 ? 360 : 0) - $this->location->yaw,
+                                        -$this->location->pitch
+                                    ), $this);
+                                    $projectile->setMotion($player->getEyePos()->subtractVector($this->getEyePos())->normalize()->multiply($projectileOptions["speed"]));
+                                    $projectile->setData($projectileOptions);
+                                    $projectile->spawnToAll();
+                                }
+                                $this->projectileDelay[$id]++;
                             }
                         }
                         if ($this->attackDelay > $this->attackRate) {

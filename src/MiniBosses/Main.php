@@ -92,6 +92,12 @@ class Main extends PluginBase implements Listener
                     }
                 }
             }
+            if (isset($bossData['projectile'])) {
+                $bossData['projectiles'] = [$bossData['projectile']];
+                unset($bossData['projectile']);
+                $this->data->set($name, $bossData);
+                $this->getLogger()->info("Renamed projectile to projectiles in config for boss $name");
+            }
         }
 
         $this->getLogger()->debug("Testing all bosses...");
@@ -101,17 +107,22 @@ class Main extends PluginBase implements Listener
             if ($data["enabled"] ?? true) {
                 $tested++;
                 $boss = (new Boss($loc, CompoundTag::create()->setString("CustomName", $name)));
-                if (!empty($boss->projectileOptions["networkId"]) || !empty($boss->projectileOptions["particle"])) {
-                    $projectile = (new BossProjectile($loc, $boss));
-                    if ($projectile->isFlaggedForDespawn()) {
-                        $boss->flagForDespawn();
+                if (!$boss->isFlaggedForDespawn()) {
+                    foreach ($boss->projectileOptions as $options) {
+                        if (!empty($options["networkId"]) || !empty($options["particle"])) {
+                            $projectile = (new BossProjectile($loc, $boss));
+                            $projectile->setData($options);
+                            if ($projectile->isFlaggedForDespawn()) {
+                                $boss->flagForDespawn();
+                            }
+                            $projectile->flagForDespawn();
+                        }
                     }
-                    $projectile->flagForDespawn();
-                }
-                foreach ($boss->minionOptions as $id => $option) {
-                    $minion = $boss->spawnMinion($id, $option);
-                    if (!$minion) {
-                        $boss->flagForDespawn();
+                    foreach ($boss->minionOptions as $id => $option) {
+                        $minion = $boss->spawnMinion($id, $option);
+                        if (!$minion) {
+                            $boss->flagForDespawn();
+                        }
                     }
                 }
                 if ($boss->isFlaggedForDespawn()) {
@@ -124,6 +135,7 @@ class Main extends PluginBase implements Listener
         }
         if ($this->data->hasChanged()) {
             copy($this->data->getPath(), $this->data->getPath() . ".bak");
+            $this->getLogger()->info("Old config saved to " . $this->data->getPath() . ".bak");
             $this->data->save();
         }
         $this->getLogger()->debug("Done! Tested $tested/" . count($this->data->getAll()) . " bosses");

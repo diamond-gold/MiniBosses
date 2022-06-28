@@ -33,22 +33,22 @@ class BossProjectile extends Projectile
     public function __construct(Location $location, ?Entity $shootingEntity, ?CompoundTag $nbt = null)
     {
         parent::__construct($location, $shootingEntity, $nbt);
-        if ($shootingEntity instanceof Boss) {
-            $this->networkId = $shootingEntity->projectileOptions["networkId"];
-            $this->setBaseDamage($shootingEntity->projectileOptions["attackDamage"]);
-            $this->explodeRadius = $shootingEntity->projectileOptions["explodeRadius"];
-            $this->explodeDestroyBlocks = $shootingEntity->projectileOptions["explodeDestroyBlocks"];
-            $this->setHealth($shootingEntity->projectileOptions["health"]);
-            $this->canBeAttacked = $shootingEntity->projectileOptions["canBeAttacked"];
-            $this->despawnAfter = $shootingEntity->projectileOptions["despawnAfter"];
-            $this->gravity = $shootingEntity->projectileOptions["gravity"];
-            $this->canBeDeflected = $shootingEntity->projectileOptions["canBeDeflected"];
-            $this->followNearest = $shootingEntity->projectileOptions["followNearest"];
-            $this->particle = $shootingEntity->projectileOptions["particle"];
-            $this->setCanSaveWithChunk(false);
-        } else {
-            $this->flagForDespawn();
-        }
+        $this->setCanSaveWithChunk(false);
+    }
+
+    public function setData(array $data)
+    {
+        $this->networkId = $data["networkId"];
+        $this->setBaseDamage($data["attackDamage"]);
+        $this->explodeRadius = $data["explodeRadius"];
+        $this->explodeDestroyBlocks = $data["explodeDestroyBlocks"];
+        $this->setHealth($data["health"]);
+        $this->canBeAttacked = $data["canBeAttacked"];
+        $this->despawnAfter = $data["despawnAfter"];
+        $this->gravity = $data["gravity"];
+        $this->canBeDeflected = $data["canBeDeflected"];
+        $this->followNearest = $data["followNearest"];
+        $this->particle = $data["particle"];
     }
 
     protected function getInitialSizeInfo(): EntitySizeInfo

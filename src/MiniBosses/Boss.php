@@ -81,6 +81,7 @@ class Boss extends Living
     public array $topDamage = [];
     public string $displayHealth;
     public bool $movesByJumping;
+    public int $despawnAfter;
 
     const PROJECTILE_OPTIONS_TYPE = [
         "networkId" => "string",
@@ -98,6 +99,13 @@ class Boss extends Living
         "canBeDeflected" => "boolean",
         "followNearest" => "boolean",
         "particle" => "string",
+    ];
+
+    const MINIONS_OPTIONS_TYPE = [
+        "name" => "string",
+        "spawnInterval" => "integer",
+        "spawnRange" => "double",
+        "despawnAfter" => "integer",
     ];
 
     const PROJECTILE_OPTIONS_DEFAULT = [
@@ -147,6 +155,10 @@ class Boss extends Living
         "minions" => [],
         "topRewards" => [],
         "movesByJumping" => false,
+    ];
+
+    const MINIONS_OPTIONS_DEFAULT = [
+        "despawnAfter" => 0,
     ];
 
     public function initEntity(CompoundTag $nbt): void
@@ -308,19 +320,20 @@ class Boss extends Living
                 }
             }
         }
+        $this->displayHealth = $this->validateType($data, "displayHealth", "string");
         $this->movesByJumping = $this->validateType($data, "movesByJumping", "boolean");
         if ($this->movesByJumping && $this->gravity <= 0) {
             $this->log(LogLevel::WARNING, "movesByJumping is enabled but gravity is negative or zero, this will not work");
         }
-        $this->displayHealth = $this->validateType($data, "displayHealth", "string");
+        $this->despawnAfter = $this->validateType($data, "despawnAfter", "integer", self::MINIONS_OPTIONS_DEFAULT["despawnAfter"]);
         if ($validateMinions) {
             foreach ($this->minionOptions as $id => $minionData) {
                 if (!is_int($id)) {
                     throw new Exception("Minion $id error: Minion id must be an integer");
                 }
                 try {
-                    foreach (["name" => "string", "spawnInterval" => "integer", "spawnRange" => "double"] as $option => $type) {
-                        $this->validateType($minionData, $option, $type);
+                    foreach (self::MINIONS_OPTIONS_TYPE as $option => $type) {
+                        $this->validateType($minionData, $option, $type, self::MINIONS_OPTIONS_DEFAULT[$option] ?? null);
                     }
                     $testMinionData = array_merge($minionData, ["x" => 0, "y" => 0, "z" => 0, "world" => "", "networkId" => EntityIds::PIG]);//dummy data that should be supplied by boss
                     $this->parseData($testMinionData);
@@ -476,6 +489,9 @@ class Boss extends Living
     {
         if ($this->knockbackTicks > 0) {
             $this->knockbackTicks--;
+        }
+        if ($this->isMinion && $this->despawnAfter > 0 && $this->ticksLived >= $this->despawnAfter) {
+            $this->flagForDespawn();
         }
         if ($this->isAlive()) {
             $player = $this->getTargetEntity();

@@ -30,9 +30,16 @@ Create boss: `/minibosses create <entityType> <BossName>`
 
 Spawn boss: `/minibosses spawn <BossName>`
 
+Despawn boss: `/minibosses despawn <BossName>`
+* The Boss will still spawn when the chunk is loaded again (disable Boss using toggleEnabled to prevent spawning)
+
+Enable/Disable boss: `/minibosses toggleEnabled <BossName>`
+* Enabling a Boss that have not been checked/tested during startup may cause unknown behaviour, discouraged use in production
+
 Remove boss: `/minibosses delete <BossName>`
 
 List bosses in the config: `/minibosses list`
+* Also shows which bosses are enabled/disabled
 
 # Supported Entities
 Theoretically any entity, not all entities tested
@@ -56,8 +63,8 @@ Configurable
 * Health display
 * Item/XP drops (option to spread drops)
 * Respawn time
-* Skin (4D skin supported)
-* Commands on death
+* Skin (Custom geometry supported)
+* Commands on death (Execute as player/op/console)
 * Projectile
   * Entity type
   * Speed
@@ -69,6 +76,8 @@ Configurable
   * Can be attacked/deflected
   * Despawn time
   * Gravity
+  * Follow the nearest player (guided projectile)
+  * Particle (Can be just particle or particle + entity or just entity)
   * Explosive flying pigs anyone? :P
 * Top damage rewards (items/commands)
 * Minions (Configured in the same manner as a Boss, can do anything a Boss can do)
@@ -114,7 +123,7 @@ BossName:
   attackRate: 10 #in ticks
   speed: 1
   drops: 1;0;1;;100 2;0;1;;50 3;0;1;;25 #in the format: ID;Damage;Count;NBT hex/json;DropChance(1-100),space separate items
-  respawnTime: 100 #in ticks
+  respawnTime: 100 #in ticks, if negative Boss will not respawn automatically
   skin: #applicable only to minecraft:player
     Name: ""
     Data: "" #skin hex
@@ -135,9 +144,9 @@ BossName:
    - CONSOLE say Hi {PLAYER} {BOSS} #execute as console if prefixed with CONSOLE, {PLAYER} as player name, {BOSS} as boss name
    - OP say {BOSS} #temp set player as OP and execute command on behalf of player
    - me Hi
-  projectile: #Boss will always prioritize firing projectile over attacking if within range specified below
+  projectiles:
     # [] for no projectile fired
-    networkId: minecraft:arrow #any entity except player, note arrow/item cannot be attacked due to client-side limitation
+  - networkId: minecraft:arrow #any entity except player, note arrow/item cannot be attacked due to client-side limitation
     fireRangeMin: 5 #fire projectile if target within range Min Max
     fireRangeMax: 10
     speed: 1
@@ -177,9 +186,11 @@ BossName:
     health: 1 #optional override
     speed: 2 #optional override
     gravity: 0 #optional override
+    despawnAfter: 0 #optional, in ticks, 0 = never despawn
     drops: "" #recommended override, if not minion will drop Boss drops
     commands: [] #recommended override, if not minion will execute same commands in Boss
     topRewards: [] #recommended override, if not minion will give same rewards as Boss
     minions: [] #recommended override to prevent minion spawning minion disaster
   displayHealth: "" # {HEALTH} => health value , {MAX_HEALTH} => maxHealth , {BAR} => health bar, example: "{HEALTH}/{MAX_HEALTH} {BAR}"
+  movesByJumping: false #if true, boss will jump (jumpStrength) when it moves (like slime), configuration of hurtModifiers is recommended to prevent/reduce fall damage
 ```

@@ -6,6 +6,7 @@ use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\console\ConsoleCommandSender;
 use pocketmine\data\bedrock\LegacyEntityIdToStringIdMap;
+use pocketmine\data\bedrock\LegacyItemIdToStringIdMap;
 use pocketmine\entity\EntityDataHelper;
 use pocketmine\entity\EntityFactory;
 use pocketmine\entity\Location;
@@ -205,11 +206,11 @@ class Main extends PluginBase implements Listener
                             "networkId" => $networkId,
                             "x" => $pos->x, "y" => $pos->y, "z" => $pos->z, "world" => $pos->getWorld()->getFolderName(),
 
-                            "heldItem" => ($heldItem->getId() . ";" . $heldItem->getMeta() . ";" . $heldItem->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($heldItem->getNamedTag())))),
-                            "offhandItem" => ($offhandItem->getId() . ";" . $offhandItem->getMeta() . ";" . $offhandItem->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($offhandItem->getNamedTag())))),
+                            "heldItem" => ((LegacyItemIdToStringIdMap::getInstance()->legacyToString($heldItem->getId()) ?? "air") . ";" . $heldItem->getMeta() . ";" . $heldItem->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($heldItem->getNamedTag())))),
+                            "offhandItem" => ((LegacyItemIdToStringIdMap::getInstance()->legacyToString($offhandItem->getId()) ?? "air") . ";" . $offhandItem->getMeta() . ";" . $offhandItem->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($offhandItem->getNamedTag())))),
                             "projectile" => Boss::PROJECTILE_OPTIONS_DEFAULT,
                             "armor" => array_map(function (Item $i): string {
-                                return $i->getId() . ";" . $i->getMeta() . ";" . $i->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($i->getNamedTag())));
+                                return (LegacyItemIdToStringIdMap::getInstance()->legacyToString($i->getId()) ?? "air") . ";" . $i->getMeta() . ";" . $i->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($i->getNamedTag())));
                             }, $sender->getArmorInventory()->getContents(true)),
                             "minions" => [["name" => $name, "spawnInterval" => 100, "spawnRange" => 5, "health" => 1, "gravity" => 0, "drops" => "", "minions" => [], "commands" => []]]
                         ]);

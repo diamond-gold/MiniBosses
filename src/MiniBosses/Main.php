@@ -188,6 +188,10 @@ class Main extends PluginBase implements Listener
                         if (is_numeric($networkId)) {
                             $sender->sendMessage("Legacy int network id may not be supported in the future, please use string id instead");
                             $networkId = (int)$networkId;
+                            if (!in_array($networkId, LegacyEntityIdToStringIdMap::getInstance()->getStringToLegacyMap(), true)) {
+                                $sender->sendMessage(TF::RED . "Unrecognised Network ID or Entity type $networkId");
+                                return true;
+                            }
                         } else {
                             if (!str_starts_with($networkId, "minecraft:")) {
                                 $networkId = "minecraft:" . $networkId;

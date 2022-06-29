@@ -84,7 +84,7 @@ class Boss extends Living
     public string $displayHealth;
     public bool $movesByJumping;
     public int $despawnAfter;
-    /** @var int[]  */
+    /** @var int[] */
     public array $projectileDelay = [];
 
     const PROJECTILE_OPTIONS_TYPE = [
@@ -271,7 +271,7 @@ class Boss extends Living
                         throw new Exception("Projectile $id: Unknown projectile entity type " . $projectileOptions["networkId"]);
                     }
                     if ($projectileOptions["networkId"] === EntityIds::PLAYER) {
-                        throw new Exception("Projectile $id: ". EntityIds::PLAYER . " is not a valid projectile entity type, please use other entity");
+                        throw new Exception("Projectile $id: " . EntityIds::PLAYER . " is not a valid projectile entity type, please use other entity");
                     }
                 } elseif (empty($projectileOptions["particle"])) {
                     $this->log(LogLevel::WARNING, "Projectile $id is completely invisible");
@@ -666,7 +666,7 @@ class Boss extends Living
     public function attack(EntityDamageEvent $source): void
     {
         if (isset($this->hurtModifiers[$source->getCause()])) {
-            $source->setBaseDamage($source->getBaseDamage() * floatval($this->hurtModifiers[$source->getCause()]));
+            $source->setBaseDamage($source->getBaseDamage() * $this->hurtModifiers[$source->getCause()]);
         }
         parent::attack($source);
         if (!$source->isCancelled() && $source instanceof EntityDamageByEntityEvent) {

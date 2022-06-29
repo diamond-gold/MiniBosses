@@ -212,11 +212,11 @@ class Main extends PluginBase implements Listener
 
                             "heldItem" => ((LegacyItemIdToStringIdMap::getInstance()->legacyToString($heldItem->getId()) ?? "air") . ";" . $heldItem->getMeta() . ";" . $heldItem->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($heldItem->getNamedTag())))),
                             "offhandItem" => ((LegacyItemIdToStringIdMap::getInstance()->legacyToString($offhandItem->getId()) ?? "air") . ";" . $offhandItem->getMeta() . ";" . $offhandItem->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($offhandItem->getNamedTag())))),
-                            "projectile" => Boss::PROJECTILE_OPTIONS_DEFAULT,
+                            "projectiles" => [],
                             "armor" => array_map(function (Item $i): string {
                                 return (LegacyItemIdToStringIdMap::getInstance()->legacyToString($i->getId()) ?? "air") . ";" . $i->getMeta() . ";" . $i->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($i->getNamedTag())));
                             }, $sender->getArmorInventory()->getContents(true)),
-                            "minions" => [["name" => $name, "spawnInterval" => 100, "spawnRange" => 5, "health" => 1, "gravity" => 0, "drops" => "", "minions" => [], "commands" => []]]
+                            "minions" => []
                         ]);
                         if ($networkId === EntityIds::PLAYER) {
                             $data["skin"] = ["Name" => $skin->getSkinId(), "Data" => bin2hex($skin->getSkinData()), "CapeData" => bin2hex($skin->getCapeData()), "GeometryName" => $skin->getGeometryName(), "GeometryData" => json_encode($skin->getGeometryData())];

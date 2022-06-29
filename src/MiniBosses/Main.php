@@ -276,6 +276,7 @@ class Main extends PluginBase implements Listener
                 }
                 break;
             case "toggleEnabled":
+            case "toggleenabled":
                 if ($argsCount >= 2) {
                     $name = implode(' ', $args);
                     $data = $this->data->get($name, null);

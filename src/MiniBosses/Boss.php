@@ -357,7 +357,7 @@ class Boss extends Living
 
     /**
      * Throws Exception if data is not expected type and no default value
-     * @throws Exception
+     * @throws SavedDataLoadingException
      */
     private function validateType(array $data, string $index, string $type, mixed $defaultOverride = null, string $context = "")
     {
@@ -641,6 +641,7 @@ class Boss extends Living
                 $data["z"] = $this->location->z + mt_rand(-$option["spawnRange"], $option["spawnRange"]);
                 $data["world"] = $this->getWorld()->getFolderName();
                 $data["autoAttack"] = true;
+                $data["despawnAfter"] = $option["despawnAfter"];
                 foreach ($option as $o => $d) {
                     if (isset($data[$o])) {
                         $data[$o] = $d;
@@ -658,7 +659,7 @@ class Boss extends Living
             $minion->spawnToAll();
             return $minion;
         } else {
-            $this->log(LogLevel::WARNING, "Failed to spawn minion $id, $minion");
+            $this->log(LogLevel::WARNING, "Failed to spawn minion $id: $minion");
         }
         return null;
     }

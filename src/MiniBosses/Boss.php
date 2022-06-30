@@ -385,7 +385,7 @@ class Boss extends Living
         }
         $arr = explode(";", $itemStr);
         try {
-            if (empty($arr[0])) {
+            if (!isset($arr[0]) || $arr[0] === "") {
                 throw new Exception("Empty ID");
             }
             if (!is_numeric($arr[0])) {

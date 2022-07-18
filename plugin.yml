@@ -1,8 +1,8 @@
 name: MiniBosses
 main: MiniBosses\Main
 description: Adds very customisable Bosses
-version: 3.2.0
-api: 4.3.0
+version: 3.2.1-dev
+api: 4.6.0
 load: POSTWORLD
 author: diamond-gold (ace)
 website: https://github.com/diamond-gold/MiniBosses

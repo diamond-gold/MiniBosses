@@ -29,7 +29,7 @@ use pocketmine\network\mcpe\convert\SkinAdapterSingleton;
 use pocketmine\network\mcpe\convert\TypeConverter;
 use pocketmine\network\mcpe\protocol\AddActorPacket;
 use pocketmine\network\mcpe\protocol\AddPlayerPacket;
-use pocketmine\network\mcpe\protocol\AdventureSettingsPacket;
+use pocketmine\network\mcpe\protocol\UpdateAbilitiesPacket;
 use pocketmine\network\mcpe\protocol\MobEquipmentPacket;
 use pocketmine\network\mcpe\protocol\PlayerListPacket;
 use pocketmine\network\mcpe\protocol\types\DeviceOS;
@@ -452,7 +452,6 @@ class Boss extends Living
                 $uuid,
                 $this->getName(),
                 $this->getId(),
-                $this->getId(),
                 "",
                 $this->location->asVector3(),
                 $this->getMotion(),
@@ -462,7 +461,7 @@ class Boss extends Living
                 ItemStackWrapper::legacy(TypeConverter::getInstance()->coreItemStackToNet($this->heldItem)),
                 GameMode::SURVIVAL,
                 $this->getAllNetworkData(),
-                AdventureSettingsPacket::create(0, 0, 0, 0, 0, $this->getId()),
+                UpdateAbilitiesPacket::create(0, 0, $this->getId(), []),
                 [],
                 "",
                 DeviceOS::UNKNOWN
@@ -479,6 +478,7 @@ class Boss extends Living
                 $this->location->asVector3(),
                 $this->getMotion(),
                 $this->location->pitch,
+                $this->location->yaw,
                 $this->location->yaw,
                 $this->location->yaw,
                 array_map(function (Attribute $attr): NetworkAttribute {

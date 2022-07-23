@@ -32,7 +32,7 @@ class Main extends PluginBase implements Listener
     /** @var string[][][] */
     private array $chunkLoadCache = [];
 
-    public function onEnable(): void
+    protected function onEnable(): void
     {
         EntityFactory::getInstance()->register(Boss::class, function (World $world, CompoundTag $tag): Boss {
             return new Boss(EntityDataHelper::parseLocation($tag, $world), $tag);

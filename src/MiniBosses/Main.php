@@ -29,6 +29,7 @@ use ReflectionClass;
 class Main extends PluginBase implements Listener
 {
     public Config $data;
+    /** @var string[][][] */
     private array $chunkLoadCache = [];
 
     public function onEnable(): void
@@ -165,12 +166,15 @@ class Main extends PluginBase implements Listener
         if (empty($this->chunkLoadCache)) {
             foreach ($this->data->getAll() as $name => $data) {
                 if ($data["enabled"] ?? true) {
-                    $this->chunkLoadCache[$data["world"]][($data["x"] >> 4) . " " . ($data["z"] >> 4)] = $name;
+                    $this->chunkLoadCache[$data["world"]][($data["x"] >> 4) . " " . ($data["z"] >> 4)][] = $name;
                 }
             }
         }
         if (isset($this->chunkLoadCache[$event->getWorld()->getFolderName()][$event->getChunkX() . " " . $event->getChunkZ()])) {
-            $this->spawnBoss($this->chunkLoadCache[$event->getWorld()->getFolderName()][$event->getChunkX() . " " . $event->getChunkZ()]);
+            $arr = $this->chunkLoadCache[$event->getWorld()->getFolderName()][$event->getChunkX() . " " . $event->getChunkZ()];
+            foreach ($arr as $name) {
+                $this->spawnBoss($name);
+            }
         }
     }
 

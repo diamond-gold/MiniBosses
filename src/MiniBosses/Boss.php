@@ -234,6 +234,8 @@ class Boss extends Living
                     $geometryData = json_decode($data["skin"]["GeometryData"]);
                     if ($geometryData === null) {
                         $geometryData = hex2bin($data["skin"]["GeometryData"]);
+                    }else if($geometryData instanceof \stdClass){
+                        $geometryData = json_encode($geometryData);
                     }
                     $this->skin = new Skin($data["skin"]["Name"], hex2bin($data["skin"]["Data"]), hex2bin($data["skin"]["CapeData"]), $data["skin"]["GeometryName"], $geometryData);
                 }

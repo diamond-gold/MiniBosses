@@ -219,7 +219,7 @@ class Main extends PluginBase implements Listener
                             "minions" => []
                         ]);
                         if ($networkId === EntityIds::PLAYER) {
-                            $data["skin"] = ["Name" => $skin->getSkinId(), "Data" => bin2hex($skin->getSkinData()), "CapeData" => bin2hex($skin->getCapeData()), "GeometryName" => $skin->getGeometryName(), "GeometryData" => json_encode($skin->getGeometryData())];
+                            $data["skin"] = ["Name" => $skin->getSkinId(), "Data" => bin2hex($skin->getSkinData()), "CapeData" => bin2hex($skin->getCapeData()), "GeometryName" => $skin->getGeometryName(), "GeometryData" => $skin->getGeometryData()];
                         }
                         $this->data->set($name, $data);
                         $this->data->save();

@@ -1,5 +1,5 @@
 name: MiniBosses
-main: MiniBosses\Main
+main: diamondgold\MiniBosses\Main
 description: Adds very customisable Bosses
 version: 3.2.1-dev
 api: 4.6.0

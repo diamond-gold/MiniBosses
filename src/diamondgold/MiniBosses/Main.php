@@ -1,6 +1,6 @@
 <?php
 
-namespace MiniBosses;
+namespace diamondgold\MiniBosses;
 
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;

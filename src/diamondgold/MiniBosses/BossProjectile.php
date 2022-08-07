@@ -36,7 +36,10 @@ class BossProjectile extends Projectile
         $this->setCanSaveWithChunk(false);
     }
 
-    public function setData(array $data)
+    /**
+     * @param mixed[] $data
+     */
+    public function setData(array $data): void
     {
         $this->networkId = $data["networkId"];
         $this->setBaseDamage($data["attackDamage"]);

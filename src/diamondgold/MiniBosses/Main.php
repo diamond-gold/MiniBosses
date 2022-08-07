@@ -21,6 +21,7 @@ use pocketmine\permission\DefaultPermissions;
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\scheduler\ClosureTask;
+use pocketmine\utils\AssumptionFailedError;
 use pocketmine\utils\Config;
 use pocketmine\utils\TextFormat as TF;
 use pocketmine\world\World;
@@ -43,6 +44,10 @@ class Main extends PluginBase implements Listener
 
         $this->getLogger()->debug("Checking config...");
         $this->data = new Config($this->getDataFolder() . "Bosses.yml", Config::YAML);
+        /**
+         * @var string $name
+         * @var mixed[] $bossData
+         */
         foreach ($this->data->getAll() as $name => $bossData) {
             if (!($bossData["enabled"] ?? true)) {
                 continue;
@@ -104,7 +109,14 @@ class Main extends PluginBase implements Listener
 
         $this->getLogger()->debug("Testing all bosses...");
         $tested = 0;
-        $loc = Location::fromObject($this->getServer()->getWorldManager()->getDefaultWorld()->getSpawnLocation(), $this->getServer()->getWorldManager()->getDefaultWorld());
+        $world = $this->getServer()->getWorldManager()->getDefaultWorld();
+        if ($world === null) {
+            throw new AssumptionFailedError("Default world is null");
+        }
+        $loc = Location::fromObject($world->getSpawnLocation(), $world);
+        /**
+         * @var string $name
+         */
         foreach ($this->data->getAll() as $name => $data) {
             if ($data["enabled"] ?? true) {
                 $tested++;
@@ -161,9 +173,12 @@ class Main extends PluginBase implements Listener
         }
     }
 
-    public function ChunkLoadEvent(ChunkLoadEvent $event)
+    public function ChunkLoadEvent(ChunkLoadEvent $event): void
     {
         if (empty($this->chunkLoadCache)) {
+            /**
+             * @var string $name
+             */
             foreach ($this->data->getAll() as $name => $data) {
                 if ($data["enabled"] ?? true) {
                     $this->chunkLoadCache[$data["world"]][($data["x"] >> 4) . " " . ($data["z"] >> 4)][] = $name;
@@ -171,8 +186,7 @@ class Main extends PluginBase implements Listener
             }
         }
         if (isset($this->chunkLoadCache[$event->getWorld()->getFolderName()][$event->getChunkX() . " " . $event->getChunkZ()])) {
-            $arr = $this->chunkLoadCache[$event->getWorld()->getFolderName()][$event->getChunkX() . " " . $event->getChunkZ()];
-            foreach ($arr as $name) {
+            foreach ($this->chunkLoadCache[$event->getWorld()->getFolderName()][$event->getChunkX() . " " . $event->getChunkZ()] as $name) {
                 $this->spawnBoss($name);
             }
         }
@@ -186,7 +200,7 @@ class Main extends PluginBase implements Listener
                 if (!($sender instanceof Player)) {
                     $sender->sendMessage("Please run in-game");
                 } elseif ($argsCount >= 3) {
-                    $networkId = array_shift($args);
+                    $networkId = (string)array_shift($args);
                     $name = implode(' ', $args);
                     if ($this->data->get($name, null) === null) {
                         if (is_numeric($networkId)) {
@@ -314,10 +328,12 @@ class Main extends PluginBase implements Listener
                     if (($data = $this->data->get($name, null)) !== null) {
                         if ($this->getServer()->getWorldManager()->loadWorld($data["world"])) {
                             $l = $this->getServer()->getWorldManager()->getWorldByName($data["world"]);
-                            $l->loadChunk($data["x"] >> 4, $data["z"] >> 4);
-                            foreach ($l->getChunkEntities($data["x"] >> 4, $data["z"] >> 4) as $e) {
-                                if ($e instanceof Boss && $e->getName() === $name) {
-                                    $e->flagForDespawn();
+                            if ($l instanceof World) {//not needed logic wise, but just in case
+                                $l->loadChunk($data["x"] >> 4, $data["z"] >> 4);
+                                foreach ($l->getChunkEntities($data["x"] >> 4, $data["z"] >> 4) as $e) {
+                                    if ($e instanceof Boss && $e->getName() === $name) {
+                                        $e->flagForDespawn();
+                                    }
                                 }
                             }
                         }
@@ -367,7 +383,7 @@ class Main extends PluginBase implements Listener
         return $ent;
     }
 
-    public function respawn(string $name, int $time)
+    public function respawn(string $name, int $time): void
     {
         if ($this->data->get($name)) {
             $this->getScheduler()->scheduleDelayedTask(new ClosureTask(function () use ($name): void {
@@ -379,7 +395,13 @@ class Main extends PluginBase implements Listener
         }
     }
 
-    public function executeCommands(Boss $boss, ?Player $p, array $commands = [])
+    /**
+     * @param Boss $boss
+     * @param Player|null $p
+     * @param string[] $commands
+     * @return void
+     */
+    public function executeCommands(Boss $boss, ?Player $p, array $commands = []): void
     {
         $name = $boss->getNameTag();
         if (empty($commands)) {
@@ -395,7 +417,7 @@ class Main extends PluginBase implements Listener
             if (str_contains($command, "{PLAYER}") && $p === null) {
                 continue;
             }
-            $command = str_replace(["{PLAYER}", "{BOSS}"], [$p->getName(), $name], $command);
+            $command = str_replace(["{PLAYER}", "{BOSS}"], [$p?->getName(), $name], $command);
             if (str_starts_with($command, "CONSOLE ")) {
                 $command = substr($command, strlen("CONSOLE "));
                 $sender = new ConsoleCommandSender($this->getServer(), $this->getServer()->getLanguage());
@@ -412,7 +434,7 @@ class Main extends PluginBase implements Listener
             }
             $this->getServer()->dispatchCommand($sender, $command);
             if (isset($runAsOp) && $runAsOp && isset($op) && !$op) {
-                $p->setBasePermission(DefaultPermissions::ROOT_OPERATOR, false);
+                $p?->setBasePermission(DefaultPermissions::ROOT_OPERATOR, false);
             }
         }
     }

@@ -8,7 +8,6 @@ class DropsEntry
 {
     public function __construct(private Item $item, private int $chance)
     {
-
     }
 
     public function getItem(): Item

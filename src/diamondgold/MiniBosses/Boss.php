@@ -43,15 +43,17 @@ use pocketmine\network\mcpe\protocol\types\inventory\ContainerIds;
 use pocketmine\network\mcpe\protocol\types\inventory\ItemStackWrapper;
 use pocketmine\network\mcpe\protocol\types\PlayerListEntry;
 use pocketmine\player\Player;
+use pocketmine\utils\AssumptionFailedError;
 use pocketmine\utils\TextFormat;
 use pocketmine\world\Position;
 use Ramsey\Uuid\Uuid;
 use ReflectionClass;
+use stdClass;
 use TypeError;
 
 class Boss extends Living
 {
-    private ?Main $plugin = null;
+    protected Main $plugin;
     public Position $spawnPos;
     public float $attackDamage;
     public float $speed;
@@ -72,15 +74,19 @@ class Boss extends Living
     public float $height;
     public bool $spreadDrops;
     public int $xpDropAmount;
+    /** @var float[][]|bool[][]|string[][] */
     public array $projectileOptions = [];
     /** @var float[] */
     public array $hurtModifiers = [];
+    /** @var float[][]|bool[][]|string[][] */
     public array $minionOptions = [];
     /** @var int[] */
     public array $minionSpawnDelay = [];
     public bool $isMinion = false;
     public int $minionId = -1;
+    /** @var string[][]|Item[][] */
     public array $topRewards = [];
+    /** @var float[] */
     public array $topDamage = [];
     public string $displayHealth;
     public bool $movesByJumping;
@@ -109,7 +115,7 @@ class Boss extends Living
     const MINIONS_OPTIONS_TYPE = [
         "name" => "string",
         "spawnInterval" => "integer",
-        "spawnRange" => "double",
+        "spawnRange" => "integer",
         "despawnAfter" => "integer",
     ];
 
@@ -170,11 +176,12 @@ class Boss extends Living
     {
         parent::initEntity($nbt);
         $this->setCanSaveWithChunk(false);
-        $this->plugin = $this->server->getPluginManager()->getPlugin("MiniBosses");
-        if (!$this->plugin) {
+        $plugin = $this->server->getPluginManager()->getPlugin("MiniBosses");
+        if (!$plugin instanceof Main) {
             $this->flagForDespawn();
             return;
         }
+        $this->plugin = $plugin;
         if ($this->plugin->isDisabled()) {
             $this->flagForDespawn();
             $this->log(LogLevel::ERROR, "Despawn due to plugin disabled");
@@ -195,9 +202,12 @@ class Boss extends Living
     }
 
     /**
+     * @param mixed[] $data
+     * @param bool $validateMinions
+     * @return void
      * @throws Exception
      */
-    private function parseData(array $data, bool $validateMinions = true)
+    private function parseData(array $data, bool $validateMinions = true): void
     {
         $this->width = $this->validateType($data, "width", "double");
         $this->height = $this->validateType($data, "height", "double");
@@ -220,7 +230,7 @@ class Boss extends Living
         if ($drops !== "") {
             foreach (explode(' ', $drops) as $itemStr) { //TODO: change this, this is preventing space character usage in NBT json
                 $explode = explode(';', $itemStr);
-                $this->drops[] = new DropsEntry($this->parseItem($itemStr), $explode[4] ?? 100);
+                $this->drops[] = new DropsEntry($this->parseItem($itemStr), (int)($explode[4] ?? 100));
             }
         }
         $this->respawnTime = $this->validateType($data, "respawnTime", "integer");
@@ -235,10 +245,10 @@ class Boss extends Living
                     $geometryData = json_decode($data["skin"]["GeometryData"]);
                     if ($geometryData === null) {
                         $geometryData = hex2bin($data["skin"]["GeometryData"]);
-                    }else if($geometryData instanceof \stdClass){
+                    } elseif ($geometryData instanceof stdClass) {
                         $geometryData = json_encode($geometryData);
                     }
-                    $this->skin = new Skin($data["skin"]["Name"], hex2bin($data["skin"]["Data"]), hex2bin($data["skin"]["CapeData"]), $data["skin"]["GeometryName"], $geometryData);
+                    $this->skin = new Skin($data["skin"]["Name"], (string)hex2bin($data["skin"]["Data"]), (string)hex2bin($data["skin"]["CapeData"]), $data["skin"]["GeometryName"], $geometryData);
                 }
             } catch (Exception $e) {
                 $this->log(LogLevel::ERROR, "Invalid skin: " . $e->getMessage());
@@ -263,7 +273,7 @@ class Boss extends Living
         foreach ($this->projectileOptions as $id => $projectileOptions) {
             if (isset($projectileOptions['networkId']) || isset($projectileOptions['particle'])) {
                 foreach (self::PROJECTILE_OPTIONS_TYPE as $option => $type) {
-                    $projectileOptions[$option] = $this->validateType($projectileOptions, $option, $type, self::PROJECTILE_OPTIONS_DEFAULT[$option] ?? null, "Projectile $id");
+                    $projectileOptions[$option] = $this->validateType($projectileOptions, $option, $type, self::PROJECTILE_OPTIONS_DEFAULT[$option], "Projectile $id");
                 }
                 if (!empty($projectileOptions["networkId"])) {
                     if (!str_starts_with($projectileOptions["networkId"], "minecraft:")) {
@@ -293,21 +303,22 @@ class Boss extends Living
             $item = $this->parseItem($piece);
             $this->getArmorInventory()->setItem($i, $item);
         }
-        $this->hurtModifiers = $this->validateType($data, "hurtModifiers", "array");
+        $hurtModifiers = $this->validateType($data, "hurtModifiers", "array");
         $damageCauses = array_filter((new ReflectionClass(EntityDamageEvent::class))->getConstants(), function ($value, $key): bool {
             return str_contains($key, "CAUSE_");
         }, ARRAY_FILTER_USE_BOTH);
-        foreach ($this->hurtModifiers as $cause => $multiplier) {
+        foreach ($hurtModifiers as $cause => $multiplier) {
             if (!in_array($cause, $damageCauses)) {
-                unset($this->hurtModifiers[$cause]);
+                unset($hurtModifiers[$cause]);
                 $this->log(LogLevel::ERROR, "hurtModifiers: Unknown damage cause " . $cause . ", skipping ");
                 continue;
             }
             if (!is_float($multiplier) && !is_int($multiplier)) {
-                unset($this->hurtModifiers[$cause]);
+                unset($hurtModifiers[$cause]);
                 $this->log(LogLevel::ERROR, "hurtModifiers: Invalid multiplier for cause " . $cause . ", skipping");
             }
         }
+        $this->hurtModifiers = $hurtModifiers;
         $this->knockbackResistanceAttr->setValue($this->validateType($data, "knockbackResistance", "double"));
         $this->minionOptions = $this->validateType($data, "minions", "array");
         $this->topRewards = $this->validateType($data, "topRewards", "array");
@@ -360,9 +371,14 @@ class Boss extends Living
 
     /**
      * Throws Exception if data is not expected type and no default value
-     * @throws SavedDataLoadingException
+     * @param mixed[] $data
+     * @param string $index
+     * @param string $type
+     * @param float|bool|string|null $defaultOverride
+     * @param string $context
+     * @return mixed
      */
-    private function validateType(array $data, string $index, string $type, mixed $defaultOverride = null, string $context = "")
+    private function validateType(array $data, string $index, string $type, float|bool|string $defaultOverride = null, string $context = ""): mixed
     {
         $default = $defaultOverride ?? self::BOSS_OPTIONS_DEFAULT[$index] ?? null;
         if (!isset($data[$index])) {
@@ -397,14 +413,14 @@ class Boss extends Living
                     throw new Exception("Unknown ID '$arr[0]'");
                 }
                 if ($item instanceof Durable && isset($arr[1])) {
-                    $item->setDamage($arr[1]);
+                    $item->setDamage((int)$arr[1]);
                 }
             } else {
-                $item = ItemFactory::getInstance()->get($arr[0], empty($arr[1]) ? 0 : $arr[1]);
+                $item = ItemFactory::getInstance()->get((int)$arr[0], empty($arr[1]) ? 0 : (int)$arr[1]);
             }
 
             if (!empty($arr[2])) {
-                $item->setCount($arr[2]);
+                $item->setCount((int)$arr[2]);
             }
 
             $nbt = null;
@@ -412,7 +428,7 @@ class Boss extends Living
                 if (str_starts_with($arr[3], '{')) {
                     $nbt = JsonNbtParser::parseJson(str_replace('_', ' ', $arr[3]));
                 } else {
-                    $nbt = (new LittleEndianNbtSerializer())->read(hex2bin($arr[3]))->mustGetCompoundTag();
+                    $nbt = (new LittleEndianNbtSerializer())->read((string)hex2bin($arr[3]))->mustGetCompoundTag();
                 }
             }
             if ($nbt !== null) {
@@ -425,9 +441,9 @@ class Boss extends Living
         return VanillaItems::AIR();
     }
 
-    protected function log(string $level, string $msg)
+    protected function log(string $level, string $msg): void
     {
-        $this->plugin?->getLogger()->log($level, "[" . ($this->isMinion ? "Minion$this->minionId " . $this->getName() : $this->getName()) . "] " . $msg);
+        $this->plugin->getLogger()->log($level, "[" . ($this->isMinion ? "Minion$this->minionId " . $this->getName() : $this->getName()) . "] " . $msg);
     }
 
     public function getName(): string
@@ -440,15 +456,17 @@ class Boss extends Living
         if ($this->getNameTag() === "") {
             parent::setNameTag($name);
         } else {
-            $this->plugin?->getLogger()->logException(new Exception("Boss name tag should not be modified"));
+            $this->plugin->getLogger()->logException(new Exception("Boss name tag should not be modified"));
         }
     }
 
     public function sendSpawnPacket(Player $player): void
     {
         if ($this->networkId === EntityIds::PLAYER) {
+            if ($this->skin === null) {
+                throw new AssumptionFailedError("Boss ".$this->getName()." has no skin");
+            }
             $uuid = Uuid::uuid4();
-
             $player->getNetworkSession()->sendDataPacket(PlayerListPacket::add([PlayerListEntry::createAdditionEntry($uuid, $this->id, $this->getName(), SkinAdapterSingleton::get()->toSkinData($this->skin))]));
 
             $player->getNetworkSession()->sendDataPacket(AddPlayerPacket::create(
@@ -577,7 +595,7 @@ class Boss extends Living
                                         ($this->location->yaw > 180 ? 360 : 0) - $this->location->yaw,
                                         -$this->location->pitch
                                     ), $this);
-                                    $projectile->setMotion($player->getEyePos()->subtractVector($this->getEyePos())->normalize()->multiply($projectileOptions["speed"]));
+                                    $projectile->setMotion($player->getEyePos()->subtractVector($this->getEyePos())->normalize()->multiply((float)$projectileOptions["speed"]));
                                     $projectile->setData($projectileOptions);
                                     $projectile->spawnToAll();
                                 }
@@ -585,9 +603,9 @@ class Boss extends Living
                             }
                         }
                         if ($this->attackDelay > $this->attackRate) {
-                            if ($this->getTargetEntity()->location->distance($this->location) < $this->attackRange) {
+                            if ($player->location->distance($this->location) < $this->attackRange) {
                                 $this->attackDelay = 0;
-                                $ev = new EntityDamageByEntityEvent($this, $this->getTargetEntity(), EntityDamageEvent::CAUSE_ENTITY_ATTACK, $this->attackDamage);
+                                $ev = new EntityDamageByEntityEvent($this, $player, EntityDamageEvent::CAUSE_ENTITY_ATTACK, $this->attackDamage);
                                 $player->attack($ev);
                                 $this->broadcastAnimation(new ArmSwingAnimation($this));
                             }
@@ -633,15 +651,20 @@ class Boss extends Living
         return !$this->closed;
     }
 
+    /**
+     * @param int $id
+     * @param float[]|bool[]|string[] $option
+     * @return Boss|null
+     */
     public function spawnMinion(int $id, array $option): ?Boss
     {
-        $minion = $this->plugin->spawnBoss($option["name"]);
+        $minion = $this->plugin->spawnBoss((string)$option["name"]);
         if ($minion instanceof Boss) {
             try {
-                $data = $this->plugin->data->get($option["name"]);
-                $data["x"] = $this->location->x + mt_rand(-$option["spawnRange"], $option["spawnRange"]);
+                $data = $this->plugin->data->get((string)$option["name"]);
+                $data["x"] = $this->location->x + mt_rand(-(int)$option["spawnRange"], (int)$option["spawnRange"]);
                 $data["y"] = $this->location->y;
-                $data["z"] = $this->location->z + mt_rand(-$option["spawnRange"], $option["spawnRange"]);
+                $data["z"] = $this->location->z + mt_rand(-(int)$option["spawnRange"], (int)$option["spawnRange"]);
                 $data["world"] = $this->getWorld()->getFolderName();
                 $data["autoAttack"] = true;
                 $data["despawnAfter"] = $option["despawnAfter"] ?? self::MINIONS_OPTIONS_DEFAULT["despawnAfter"];

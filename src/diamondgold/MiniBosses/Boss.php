@@ -643,7 +643,7 @@ class Boss extends Living
                 $data["z"] = $this->location->z + mt_rand(-$option["spawnRange"], $option["spawnRange"]);
                 $data["world"] = $this->getWorld()->getFolderName();
                 $data["autoAttack"] = true;
-                $data["despawnAfter"] = $option["despawnAfter"];
+                $data["despawnAfter"] = $option["despawnAfter"] ?? self::MINIONS_OPTIONS_DEFAULT["despawnAfter"];
                 foreach ($option as $o => $d) {
                     if (isset($data[$o])) {
                         $data[$o] = $d;

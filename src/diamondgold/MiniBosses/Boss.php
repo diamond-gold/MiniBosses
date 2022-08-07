@@ -2,6 +2,7 @@
 
 namespace diamondgold\MiniBosses;
 
+use diamondgold\MiniBosses\data\DropsEntry;
 use Exception;
 use LogLevel;
 use pocketmine\data\SavedDataLoadingException;
@@ -61,7 +62,7 @@ class Boss extends Living
     public int $respawnTime;
     public int $knockbackTicks = 0;
     public int $attackRange;
-    /** @var Item[][]|int[][] */
+    /** @var DropsEntry[] */
     public array $drops = array();
     public ?Skin $skin = null;
     public Item $heldItem;
@@ -219,7 +220,7 @@ class Boss extends Living
         if ($drops !== "") {
             foreach (explode(' ', $drops) as $itemStr) { //TODO: change this, this is preventing space character usage in NBT json
                 $explode = explode(';', $itemStr);
-                $this->drops[] = [$this->parseItem($itemStr), $explode[4] ?? 100];
+                $this->drops[] = new DropsEntry($this->parseItem($itemStr), $explode[4] ?? 100);
             }
         }
         $this->respawnTime = $this->validateType($data, "respawnTime", "integer");
@@ -745,12 +746,16 @@ class Boss extends Living
         return $this->xpDropAmount;
     }
 
+    /**
+     * @return Item[]
+     */
     public function getDrops(): array
     {
+        /** @var Item[] $drops */
         $drops = array();
         foreach ($this->drops as $drop) {
-            if (mt_rand(1, 100) <= $drop[1]) {
-                $drops[] = $drop[0];
+            if (mt_rand(1, 100) <= $drop->getChance()) {
+                $drops[] = $drop->getItem();
             }
         }
         return $drops;

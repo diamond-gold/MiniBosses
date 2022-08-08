@@ -30,6 +30,9 @@ use pocketmine\network\mcpe\convert\SkinAdapterSingleton;
 use pocketmine\network\mcpe\convert\TypeConverter;
 use pocketmine\network\mcpe\protocol\AddActorPacket;
 use pocketmine\network\mcpe\protocol\AddPlayerPacket;
+use pocketmine\network\mcpe\protocol\types\command\CommandPermissions;
+use pocketmine\network\mcpe\protocol\types\PlayerPermissions;
+use pocketmine\network\mcpe\protocol\types\UpdateAbilitiesPacketLayer;
 use pocketmine\network\mcpe\protocol\UpdateAbilitiesPacket;
 use pocketmine\network\mcpe\protocol\MobEquipmentPacket;
 use pocketmine\network\mcpe\protocol\PlayerListPacket;
@@ -482,7 +485,14 @@ class Boss extends Living
                 ItemStackWrapper::legacy(TypeConverter::getInstance()->coreItemStackToNet($this->heldItem)),
                 GameMode::SURVIVAL,
                 $this->getAllNetworkData(),
-                UpdateAbilitiesPacket::create(0, 0, $this->getId(), []),
+                UpdateAbilitiesPacket::create(CommandPermissions::NORMAL, PlayerPermissions::VISITOR, $this->getId(), [
+                    new UpdateAbilitiesPacketLayer(
+                        UpdateAbilitiesPacketLayer::LAYER_BASE,
+                        array_fill(0, UpdateAbilitiesPacketLayer::NUMBER_OF_ABILITIES, false),
+                        0.0,
+                        0.0
+                    )
+                ]),
                 [],
                 "",
                 DeviceOS::UNKNOWN

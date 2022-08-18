@@ -78,7 +78,7 @@ class BossProjectile extends Projectile
                 $this->location->yaw,
                 $this->location->yaw,
                 array_map(function (Attribute $attr): NetworkAttribute {
-                    return new NetworkAttribute($attr->getId(), $attr->getMinValue(), $attr->getMaxValue(), $attr->getValue(), $attr->getDefaultValue());
+                    return new NetworkAttribute($attr->getId(), $attr->getMinValue(), $attr->getMaxValue(), $attr->getValue(), $attr->getDefaultValue(), []);
                 }, $this->attributeMap->getAll()),
                 $this->getAllNetworkData(),
                 []

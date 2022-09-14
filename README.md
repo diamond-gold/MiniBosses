@@ -25,6 +25,8 @@ Adds very customizable Bosses
 # Supported Entities
 Theoretically any entity, not all entities tested
 
+Custom entities from addons supported in v3.2.3+
+
 # Features
 Configurable
 * Attributes
@@ -71,4 +73,6 @@ Configurable
 [Config Explanation](https://github.com/diamond-gold/MiniBosses/wiki/Config-Explanation)
 
 [Example Configs](https://github.com/diamond-gold/MiniBosses/wiki/Example-configs)
+
+[Convert `Skin` / `Cape` from png to config](https://github.com/diamond-gold/MiniBosses/wiki/Convert-skin-or-cape-from-png-to-config)
 ```

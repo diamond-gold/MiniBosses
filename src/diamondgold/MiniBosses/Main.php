@@ -69,13 +69,13 @@ class Main extends PluginBase implements Listener
                         $this->data->set($name, $bossData);
                     }
                 } elseif (is_string($bossData[$idTag])) {
-                    if (!str_starts_with($bossData["networkId"], "minecraft:")) {
+                    if (!str_starts_with($bossData["networkId"], "minecraft:") && !str_contains($bossData["networkId"], ":")) {
                         $this->getLogger()->info("Updated networkId of boss $name " . $bossData["networkId"] . " => minecraft:" . $bossData["networkId"]);
                         $bossData["networkId"] = "minecraft:" . $bossData["networkId"];
                         $this->data->set($name, $bossData);
                     }
                     $constants = (new ReflectionClass(EntityIds::class))->getConstants();
-                    if (!in_array($bossData["networkId"], $constants, true)) {
+                    if (str_starts_with($bossData["networkId"], "minecraft:") && !in_array($bossData["networkId"], $constants, true)) {
                         $this->getLogger()->error("Unknown networkId " . $bossData["networkId"] . " for boss $name");
                         $bossData['enabled'] = false;
                         $this->data->set($name, $bossData);

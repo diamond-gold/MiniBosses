@@ -279,11 +279,11 @@ class Boss extends Living
                     $projectileOptions[$option] = $this->validateType($projectileOptions, $option, $type, self::PROJECTILE_OPTIONS_DEFAULT[$option], "Projectile $id");
                 }
                 if (!empty($projectileOptions["networkId"])) {
-                    if (!str_starts_with($projectileOptions["networkId"], "minecraft:")) {
+                    if (!str_starts_with($projectileOptions["networkId"], "minecraft:") && !str_contains($projectileOptions["networkId"], ":")) {
                         $projectileOptions["networkId"] = "minecraft:" . $projectileOptions["networkId"];
                     }
                     $constants = (new ReflectionClass(EntityIds::class))->getConstants();
-                    if (!in_array($projectileOptions["networkId"], $constants, true)) {
+                    if (str_starts_with($projectileOptions["networkId"], "minecraft:") && !in_array($projectileOptions["networkId"], $constants, true)) {
                         throw new Exception("Projectile $id: Unknown projectile entity type " . $projectileOptions["networkId"]);
                     }
                     if ($projectileOptions["networkId"] === EntityIds::PLAYER) {

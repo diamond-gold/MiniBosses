@@ -16,6 +16,7 @@ use pocketmine\network\mcpe\protocol\SpawnParticleEffectPacket;
 use pocketmine\network\mcpe\protocol\types\DimensionIds;
 use pocketmine\network\mcpe\protocol\types\entity\Attribute as NetworkAttribute;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
+use pocketmine\network\mcpe\protocol\types\entity\PropertySyncData;
 use pocketmine\player\Player;
 use pocketmine\world\Explosion;
 
@@ -81,6 +82,7 @@ class BossProjectile extends Projectile
                     return new NetworkAttribute($attr->getId(), $attr->getMinValue(), $attr->getMaxValue(), $attr->getValue(), $attr->getDefaultValue(), []);
                 }, $this->attributeMap->getAll()),
                 $this->getAllNetworkData(),
+                new PropertySyncData([], []),
                 []
             ));
         }

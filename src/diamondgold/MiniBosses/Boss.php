@@ -32,6 +32,8 @@ use pocketmine\network\mcpe\protocol\AddActorPacket;
 use pocketmine\network\mcpe\protocol\AddPlayerPacket;
 use pocketmine\network\mcpe\protocol\MobEquipmentPacket;
 use pocketmine\network\mcpe\protocol\PlayerListPacket;
+use pocketmine\network\mcpe\protocol\types\AbilitiesData;
+use pocketmine\network\mcpe\protocol\types\AbilitiesLayer;
 use pocketmine\network\mcpe\protocol\types\command\CommandPermissions;
 use pocketmine\network\mcpe\protocol\types\DeviceOS;
 use pocketmine\network\mcpe\protocol\types\entity\Attribute as NetworkAttribute;
@@ -44,7 +46,6 @@ use pocketmine\network\mcpe\protocol\types\inventory\ContainerIds;
 use pocketmine\network\mcpe\protocol\types\inventory\ItemStackWrapper;
 use pocketmine\network\mcpe\protocol\types\PlayerListEntry;
 use pocketmine\network\mcpe\protocol\types\PlayerPermissions;
-use pocketmine\network\mcpe\protocol\types\UpdateAbilitiesPacketLayer;
 use pocketmine\network\mcpe\protocol\UpdateAbilitiesPacket;
 use pocketmine\player\Player;
 use pocketmine\utils\AssumptionFailedError;
@@ -487,14 +488,14 @@ class Boss extends Living
                 GameMode::SURVIVAL,
                 $this->getAllNetworkData(),
                 new PropertySyncData([], []),
-                UpdateAbilitiesPacket::create(CommandPermissions::NORMAL, PlayerPermissions::VISITOR, $this->getId(), [
-                    new UpdateAbilitiesPacketLayer(
-                        UpdateAbilitiesPacketLayer::LAYER_BASE,
-                        array_fill(0, UpdateAbilitiesPacketLayer::NUMBER_OF_ABILITIES, false),
+                UpdateAbilitiesPacket::create(new AbilitiesData(CommandPermissions::NORMAL, PlayerPermissions::VISITOR, $this->getId(), [
+                    new AbilitiesLayer(
+                        AbilitiesLayer::LAYER_BASE,
+                        array_fill(0, AbilitiesLayer::NUMBER_OF_ABILITIES, false),
                         0.0,
                         0.0
                     )
-                ]),
+                ])),
                 [],
                 "",
                 DeviceOS::UNKNOWN

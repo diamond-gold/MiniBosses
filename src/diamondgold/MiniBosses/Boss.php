@@ -216,7 +216,6 @@ class Boss extends Living
     {
         $this->width = $this->validateType($data, "width", "double");
         $this->height = $this->validateType($data, "height", "double");
-        $this->setSize(new EntitySizeInfo($this->height, $this->width));
         $this->setScale($this->scale = $this->validateType($data, "scale", "double"));
         $this->networkId = $this->validateType($data, "networkId", "string");
         $this->range = $this->validateType($data, "range", "integer");
@@ -809,7 +808,7 @@ class Boss extends Living
 
     protected function getInitialSizeInfo(): EntitySizeInfo
     {
-        return new EntitySizeInfo($this->scale, $this->scale);
+        return new EntitySizeInfo($this->height ?? $this->scale, $this->width ?? $this->scale);
     }
 
     public static function getNetworkTypeId(): string

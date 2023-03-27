@@ -181,7 +181,7 @@ class Main extends PluginBase implements Listener
              */
             foreach ($this->data->getAll() as $name => $data) {
                 if ($data["enabled"] ?? true) {
-                    $this->chunkLoadCache[$data["world"]][($data["x"] >> 4) . " " . ($data["z"] >> 4)][] = $name;
+                    $this->chunkLoadCache[$data["world"]][(intval($data["x"]) >> 4) . " " . (intval($data["z"]) >> 4)][] = $name;
                 }
             }
         }
@@ -375,7 +375,7 @@ class Main extends PluginBase implements Listener
             return "Failed to load world " . $data["world"];
         }
         $pos = new Location($data["x"], $data["y"], $data["z"], $this->getServer()->getWorldManager()->getWorldByName($data["world"]), 0, 0);
-        if ($pos->getWorld()->loadChunk($pos->x >> 4, $pos->z >> 4) === null) {
+        if ($pos->getWorld()->loadChunk(intval($pos->x) >> 4, intval($pos->z) >> 4) === null) {
             return "Failed to load chunk at " . $pos . " (is it generated yet?)";
         }
         $ent = new Boss($pos, CompoundTag::create()->setString("CustomName", $name));

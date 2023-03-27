@@ -68,7 +68,7 @@ class Boss extends Living
     public int $attackDelay = 0;
     public int $respawnTime;
     public int $knockbackTicks = 0;
-    public int $attackRange;
+    public float $attackRange;
     /** @var DropsEntry[] */
     public array $drops = array();
     public ?Skin $skin = null;

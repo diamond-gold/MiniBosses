@@ -522,7 +522,7 @@ class Boss extends Living
                 []
             ));
         }
-        $player->getNetworkSession()->onMobArmorChange($this);
+        $player->getNetworkSession()->getEntityEventBroadcaster()->onMobArmorChange([$player->getNetworkSession()], $this);
         $player->getNetworkSession()->sendDataPacket(MobEquipmentPacket::create($this->getId(), ItemStackWrapper::legacy(TypeConverter::getInstance()->coreItemStackToNet($this->offhandItem)), 0, 0, ContainerIds::OFFHAND));
     }
 

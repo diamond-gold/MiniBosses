@@ -100,6 +100,9 @@ class Boss extends Living
     /** @var int[] */
     public array $projectileDelay = [];
 
+    /** @var string[] */
+    public array $onSpawn;
+
     const PROJECTILE_OPTIONS_TYPE = [
         "networkId" => "string",
         "fireRangeMin" => "double",
@@ -174,6 +177,7 @@ class Boss extends Living
         "minions" => [],
         "topRewards" => [],
         "movesByJumping" => false,
+        "onSpawn" => [],
     ];
 
     const MINIONS_OPTIONS_DEFAULT = [
@@ -363,6 +367,7 @@ class Boss extends Living
             $this->log(LogLevel::WARNING, "movesByJumping is enabled but gravity is negative or zero, this will not work");
         }
         $this->despawnAfter = $this->validateType($data, "despawnAfter", "integer", self::MINIONS_OPTIONS_DEFAULT["despawnAfter"]);
+        $this->onSpawn = $this->validateType($data, "onSpawn", "array");
         if ($validateMinions) {
             foreach ($this->minionOptions as $id => $minionData) {
                 if (!is_int($id)) {
@@ -536,6 +541,27 @@ class Boss extends Living
         }
         $player->getNetworkSession()->getEntityEventBroadcaster()->onMobArmorChange([$player->getNetworkSession()], $this);
         $player->getNetworkSession()->sendDataPacket(MobEquipmentPacket::create($this->getId(), ItemStackWrapper::legacy(TypeConverter::getInstance()->coreItemStackToNet($this->offhandItem)), 0, 0, ContainerIds::OFFHAND));
+    }
+
+    protected function onFirstUpdate(int $currentTick): void
+    {
+        parent::onFirstUpdate($currentTick);
+        if (!empty($this->onSpawn)) {
+            $action = $this->onSpawn[array_rand($this->onSpawn)];
+            if (str_starts_with($action, "command")) {
+                $this->plugin->executeCommands($this, null, ["CONSOLE " . substr($action, 8)]);
+            } elseif (str_starts_with($action, "message")) {
+                $message = substr($action, 8);
+                $message = str_replace(
+                    ["{BOSS}", "{X}", "{Y}", "{Z}", "{WORLD}"],
+                    [$this->getName(), $this->location->getX(), $this->location->getY(), $this->location->getZ(), $this->getWorld()->getDisplayName()],
+                    $message
+                );
+                $this->server->broadcastMessage($message);
+            } else {
+                $this->log(LogLevel::ERROR, "Unknown onSpawn action $action");
+            }
+        }
     }
 
     public function onUpdate(int $currentTick): bool

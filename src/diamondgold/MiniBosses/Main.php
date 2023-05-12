@@ -433,7 +433,7 @@ class Main extends PluginBase implements Listener
      */
     public function executeCommands(Boss $boss, ?Player $p, array $commands = []): void
     {
-        $name = $boss->getNameTag();
+        $name = $boss->getName();
         if (empty($commands)) {
             $data = $this->data->get($name);
             if ($boss->isMinion) {
@@ -447,7 +447,12 @@ class Main extends PluginBase implements Listener
             if (str_contains($command, "{PLAYER}") && $p === null) {
                 continue;
             }
-            $command = str_replace(["{PLAYER}", "{BOSS}"], [$p?->getName(), $name], $command);
+            $bossPos = $boss->getPosition();
+            $command = str_replace(
+                ["{PLAYER}", "{BOSS}", "{X}", "{Y}", "{Z}", "{WORLD}"],
+                [$p?->getName(), $name, $bossPos->getX(), $bossPos->getY(), $bossPos->getZ(), $bossPos->getWorld()->getDisplayName()],
+                $command
+            );
             if (str_starts_with($command, "CONSOLE ")) {
                 $command = substr($command, strlen("CONSOLE "));
                 $sender = new ConsoleCommandSender($this->getServer(), $this->getServer()->getLanguage());

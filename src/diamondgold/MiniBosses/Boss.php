@@ -154,7 +154,7 @@ class Boss extends Living
         "attackRate" => 10,
         "attackRange" => 1.5,
         "speed" => 1,
-        "drops" => "",
+        "drops" => [],
         "respawnTime" => 100,
         "heldItem" => "",
         "offhandItem" => "",
@@ -233,12 +233,10 @@ class Boss extends Living
         $this->attackRange = $this->validateType($data, "attackRange", "double", $this->scale * $this->width / 2 + 1);
         $this->speed = $this->validateType($data, "speed", "double");
         $this->drops = [];
-        $drops = $this->validateType($data, "drops", "string");
-        if ($drops !== "") {
-            foreach (explode(' ', $drops) as $itemStr) { //TODO: change this, this is preventing space character usage in NBT json
-                $explode = explode(';', $itemStr);
-                $this->drops[] = new DropsEntry($this->parseItem($itemStr), (int)($explode[4] ?? 100));
-            }
+        $drops = $this->validateType($data, "drops", "array");
+        foreach ($drops as $itemStr) {
+            $explode = explode(';', $itemStr);
+            $this->drops[] = new DropsEntry($this->parseItem($itemStr), (int)($explode[4] ?? 100));
         }
         $this->respawnTime = $this->validateType($data, "respawnTime", "integer");
         $this->heldItem = $this->parseItem($this->validateType($data, "heldItem", "string"));

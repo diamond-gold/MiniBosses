@@ -105,6 +105,36 @@ class Main extends PluginBase implements Listener
                 $this->data->set($name, $bossData);
                 $this->getLogger()->info("Renamed projectile to projectiles in config for boss $name");
             }
+            if (isset($bossData['drops']) && is_string($bossData['drops'])) {
+                $drops = [];
+                foreach (explode(' ', $bossData['drops']) as $itemStr) {
+                    if ($itemStr !== '') {
+                        $drops[] = $itemStr;
+                    }
+                }
+                $bossData['drops'] = $drops;
+                $this->data->set($name, $bossData);
+                $this->getLogger()->info("Changed drops to array for boss $name");
+            }
+            if (isset($bossData['minions']) && is_array($bossData['minions'])) {
+                $changed = false;
+                foreach ($bossData['minions'] as $id => $minion) {
+                    if (isset($minion['drops']) && is_string($minion['drops'])) {
+                        $drops = [];
+                        foreach (explode(' ', $minion['drops']) as $itemStr) {
+                            if ($itemStr !== '') {
+                                $drops[] = $itemStr;
+                            }
+                        }
+                        $bossData['minions'][$id]['drops'] = $drops;
+                        $changed = true;
+                    }
+                }
+                if ($changed) {
+                    $this->data->set($name, $bossData);
+                    $this->getLogger()->info("Changed drops of minions to array for boss $name");
+                }
+            }
         }
 
         $this->getLogger()->debug("Testing all bosses...");

@@ -5,7 +5,6 @@ namespace diamondgold\MiniBosses;
 use diamondgold\MiniBosses\data\DropsEntry;
 use Exception;
 use LogLevel;
-use pocketmine\data\bedrock\EffectIdMap;
 use pocketmine\data\SavedDataLoadingException;
 use pocketmine\entity\animation\ArmSwingAnimation;
 use pocketmine\entity\Attribute;
@@ -21,7 +20,7 @@ use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\item\Durable;
 use pocketmine\item\Item;
-use pocketmine\item\ItemFactory;
+use pocketmine\item\LegacyStringToItemParser;
 use pocketmine\item\StringToItemParser;
 use pocketmine\item\VanillaItems;
 use pocketmine\math\Vector3;
@@ -435,7 +434,7 @@ class Boss extends Living
                     $item->setDamage((int)$arr[1]);
                 }
             } else {
-                $item = ItemFactory::getInstance()->get((int)$arr[0], empty($arr[1]) ? 0 : (int)$arr[1]);
+                $item = LegacyStringToItemParser::getInstance()->parse($arr[0] . ":" . $arr[1] ?? 0);
             }
 
             if (!empty($arr[2])) {
@@ -483,7 +482,7 @@ class Boss extends Living
     {
         if ($this->networkId === EntityIds::PLAYER) {
             if ($this->skin === null) {
-                throw new AssumptionFailedError("Boss ".$this->getName()." has no skin");
+                throw new AssumptionFailedError("Boss " . $this->getName() . " has no skin");
             }
             $uuid = Uuid::uuid4();
             $player->getNetworkSession()->sendDataPacket(PlayerListPacket::add([PlayerListEntry::createAdditionEntry($uuid, $this->id, $this->getName(), SkinAdapterSingleton::get()->toSkinData($this->skin))]));

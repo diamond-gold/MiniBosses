@@ -3,13 +3,17 @@
 namespace diamondgold\MiniBosses;
 
 use pocketmine\entity\Attribute;
+use pocketmine\entity\effect\EffectInstance;
+use pocketmine\entity\effect\StringToEffectParser;
 use pocketmine\entity\Entity;
 use pocketmine\entity\EntitySizeInfo;
+use pocketmine\entity\Living;
 use pocketmine\entity\Location;
 use pocketmine\entity\projectile\Projectile;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\event\entity\ProjectileHitEvent;
+use pocketmine\math\RayTraceResult;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\protocol\AddActorPacket;
 use pocketmine\network\mcpe\protocol\SpawnParticleEffectPacket;
@@ -30,6 +34,8 @@ class BossProjectile extends Projectile
     protected bool $canBeDeflected;
     protected bool $followNearest;
     protected string $particle;
+    /** @var EffectInstance[] */
+    protected array $effects;
 
     public function __construct(Location $location, ?Entity $shootingEntity, ?CompoundTag $nbt = null)
     {
@@ -53,6 +59,16 @@ class BossProjectile extends Projectile
         $this->canBeDeflected = $data["canBeDeflected"];
         $this->followNearest = $data["followNearest"];
         $this->particle = $data["particle"];
+        $this->effects = [];
+        foreach ($data["effects"] as $effect) {
+            $this->effects[] = new EffectInstance(
+                StringToEffectParser::getInstance()->parse($effect["id"]),
+                $effect["duration"],
+                $effect["amplifier"],
+                $effect["showParticles"] ?? true,
+                $effect["ambient"] ?? false
+            );
+        }
     }
 
     protected function getInitialSizeInfo(): EntitySizeInfo
@@ -125,6 +141,16 @@ class BossProjectile extends Projectile
             $explosion->explodeB();
         }
         $this->flagForDespawn();
+    }
+
+    protected function onHitEntity(Entity $entityHit, RayTraceResult $hitResult): void
+    {
+        parent::onHitEntity($entityHit, $hitResult);
+        if ($entityHit instanceof Living) {
+            foreach ($this->effects as $effect) {
+                $entityHit->getEffects()->add(clone $effect);
+            }
+        }
     }
 
     public function canCollideWith(Entity $entity): bool

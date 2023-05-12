@@ -5,9 +5,11 @@ namespace diamondgold\MiniBosses;
 use diamondgold\MiniBosses\data\DropsEntry;
 use Exception;
 use LogLevel;
+use pocketmine\data\bedrock\EffectIdMap;
 use pocketmine\data\SavedDataLoadingException;
 use pocketmine\entity\animation\ArmSwingAnimation;
 use pocketmine\entity\Attribute;
+use pocketmine\entity\effect\StringToEffectParser;
 use pocketmine\entity\Entity;
 use pocketmine\entity\EntitySizeInfo;
 use pocketmine\entity\Living;
@@ -115,6 +117,7 @@ class Boss extends Living
         "canBeDeflected" => "boolean",
         "followNearest" => "boolean",
         "particle" => "string",
+        "effects" => "array",
     ];
 
     const MINIONS_OPTIONS_TYPE = [
@@ -140,6 +143,7 @@ class Boss extends Living
         "canBeDeflected" => true,
         "followNearest" => false,
         "particle" => "",
+        "effects" => [],
     ];
 
     const BOSS_OPTIONS_DEFAULT = [
@@ -296,6 +300,17 @@ class Boss extends Living
                 if (!empty($projectileOptions["particle"]) && !str_starts_with($projectileOptions["particle"], "minecraft:")) {
                     $projectileOptions["particle"] = "minecraft:" . $projectileOptions["particle"];
                 }
+                foreach ($projectileOptions["effects"] as $effectIndex => $effect) {
+                    $context = "Projectile $id effect $effectIndex:";
+                    $this->validateType($effect, "id", "string", null, $context);
+                    $this->validateType($effect, "amplifier", "integer", null, $context);
+                    $this->validateType($effect, "duration", "integer", null, $context);
+                    $this->validateType($effect, "ambient", "boolean", false, $context);
+                    $this->validateType($effect, "showParticles", "boolean", true, $context);
+                    if (StringToEffectParser::getInstance()->parse($effect["id"]) === null) {
+                        throw new Exception("$context Unknown effect id " . $effect["id"]);
+                    }
+                }
                 $this->projectileOptions[$id] = $projectileOptions;
             }
         }
@@ -378,11 +393,11 @@ class Boss extends Living
      * @param mixed[] $data
      * @param string $index
      * @param string $type
-     * @param float|bool|string|null $defaultOverride
+     * @param float|bool|string|null|mixed[] $defaultOverride
      * @param string $context
      * @return mixed
      */
-    private function validateType(array $data, string $index, string $type, float|bool|string $defaultOverride = null, string $context = ""): mixed
+    private function validateType(array $data, string $index, string $type, float|bool|string|array $defaultOverride = null, string $context = ""): mixed
     {
         $default = $defaultOverride ?? self::BOSS_OPTIONS_DEFAULT[$index] ?? null;
         if (!isset($data[$index])) {

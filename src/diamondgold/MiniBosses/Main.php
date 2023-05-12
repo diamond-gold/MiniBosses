@@ -211,11 +211,11 @@ class Main extends PluginBase implements Listener
                                 return true;
                             }
                         } else {
-                            if (!str_starts_with($networkId, "minecraft:")) {
+                            if (!str_starts_with($networkId, "minecraft:") && !str_contains($networkId, ":")) {
                                 $networkId = "minecraft:" . $networkId;
                             }
                             $constants = (new ReflectionClass(EntityIds::class))->getConstants();
-                            if (!in_array($networkId, $constants, true)) {
+                            if (str_starts_with($networkId, "minecraft:") && !in_array($networkId, $constants, true)) {
                                 $sender->sendMessage(TF::RED . "Unrecognised Network ID or Entity type $networkId");
                                 return true;
                             }

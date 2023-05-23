@@ -1,21 +1,23 @@
-# MiniBosses
+![MiniBosses](https://socialify.git.ci/diamond-gold/MiniBosses/image?description=1&font=Inter&forks=1&issues=1&logo=https%3A%2F%2Fgithub.com%2Fdiamond-gold%2FMiniBosses%2Fraw%2Fmaster%2Ficon.png&name=1&owner=1&pattern=Circuit%20Board&pulls=1&stargazers=1&theme=Light)
 
-Adds very customizable Bosses
+Encountered a bug? Want something added? Create an [issue](https://github.com/diamond-gold/MiniBosses/issues) (＃°Д°)
+
+Have questions? Start a [discussion](https://github.com/diamond-gold/MiniBosses/discussions) ✍(◔◡◔)
+
+Starring the GitHub repository is like sprinkling stardust—help me create magic! (。・∀・)ノ
+
+Feeling generous? Buy me some [snacks](https://ko-fi.com/diamondgold)! (❤´艸｀❤)
 
 [![Feature Requests](https://img.shields.io/github/issues-raw/diamond-gold/MiniBosses/Feature%20Request?label=Feature%20Requests&logo=github&style=for-the-badge)](https://github.com/diamond-gold/MiniBosses/issues)
 [![Bug Reports](https://img.shields.io/github/issues-raw/diamond-gold/MiniBosses/bug?label=Bug%20Reports&logo=github&style=for-the-badge)](https://github.com/diamond-gold/MiniBosses/issues)
-[![Total Downloads](https://img.shields.io/github/downloads/diamond-gold/MiniBosses/total?style=for-the-badge&logo=github)](https://github.com/diamond-gold/MiniBosses/releases)
-
-[![Release](https://img.shields.io/github/release/diamond-gold/MiniBosses?style=for-the-badge&logo=github)](https://github.com/diamond-gold/MiniBosses/releases/latest)
-[![Latest Release Downloads](https://img.shields.io/github/downloads/diamond-gold/MiniBosses/latest/total?style=for-the-badge&logo=github)](https://github.com/diamond-gold/MiniBosses/releases/latest)
 
 ### Poggit
 
-[Latest dev build](https://poggit.pmmp.io/ci/diamond-gold/MiniBosses/~)
+[Latest Dev Build](https://poggit.pmmp.io/ci/diamond-gold/MiniBosses/~)
 
 [![](https://poggit.pmmp.io/ci.shield/diamond-gold/MiniBosses/MiniBosses?style=for-the-badge)](https://poggit.pmmp.io/ci/diamond-gold/MiniBosses/~)
 
-[Latest release](https://poggit.pmmp.io/get/MiniBosses/)
+[Latest Release](https://poggit.pmmp.io/get/MiniBosses/)
 
 [![](https://poggit.pmmp.io/shield.api/MiniBosses?style=for-the-badge)](https://poggit.pmmp.io/p/MiniBosses)
 [![](https://poggit.pmmp.io/shield.downloads/MiniBosses?style=for-the-badge)](https://poggit.pmmp.io/p/MiniBosses)
@@ -25,7 +27,7 @@ Adds very customizable Bosses
 # Supported Entities
 Theoretically any entity, not all entities tested
 
-Custom entities from addons supported in v3.2.3+
+Custom entities added by Customies or similar plugins supported in v3.2.3+
 
 # Features
 Configurable
@@ -33,6 +35,7 @@ Configurable
   * Entity type
   * Health
   * Attack damage
+  * Attack range
   * Attack rate
   * Movement speed
   * Gravity
@@ -40,30 +43,38 @@ Configurable
   * Hurt modifiers (Reduced arrow damage? No fall damage? No problem!)
   * Knockback resistance
 * Equipment
-  * Held item
-  * Offhand
+  * Held item (cosmetic)
+  * Offhand (cosmetic)
   * Armor
-* Health display
-* Item/XP drops (option to spread drops)
+* Health display (Only minecraft:player)
+* Item/XP drops
+  * Spread drops
 * Respawn time
-* Skin (Custom geometry supported)
-* Commands on death (Execute as player/op/console)
-* Projectile
+* Skin
+  * Custom geometry supported
+  * Cape
+* Commands on death
+  * Execute as player/op/console
+* Projectiles
   * Entity type
   * Speed
-  * Firing Range
+  * Firing range
   * Fire rate
   * Damage
   * Explosion radius
   * Health
-  * Can be attacked/deflected
+  * Attacking/Deflecting
   * Despawn time
   * Gravity
   * Follow the nearest player (guided projectile)
-  * Particle (Can be just particle or particle + entity or just entity)
+  * Particles
+  * Potion effects
   * Explosive flying pigs anyone? :P
-* Top damage rewards (items/commands)
-* Minions (Configured in the same manner as a Boss, can do anything a Boss can do)
+* Top X damage rewards
+  * Items
+  * Commands
+* Minions
+* Many more...
 
 # Wiki
 [Commands & Permissions](https://github.com/diamond-gold/MiniBosses/wiki/Commands-&-Permissions)

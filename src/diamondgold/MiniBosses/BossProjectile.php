@@ -15,6 +15,7 @@ use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\event\entity\ProjectileHitEvent;
 use pocketmine\math\RayTraceResult;
 use pocketmine\nbt\tag\CompoundTag;
+use pocketmine\network\mcpe\NetworkBroadcastUtils;
 use pocketmine\network\mcpe\protocol\AddActorPacket;
 use pocketmine\network\mcpe\protocol\SpawnParticleEffectPacket;
 use pocketmine\network\mcpe\protocol\types\DimensionIds;
@@ -123,7 +124,7 @@ class BossProjectile extends Projectile
             }
         }
         if (!empty($this->particle)) {
-            $this->server->broadcastPackets($this->getViewers(), [
+            NetworkBroadcastUtils::broadcastPackets($this->getViewers(), [
                 SpawnParticleEffectPacket::create(DimensionIds::OVERWORLD, -1, $this->getPosition(), $this->particle, null)
             ]);
         }
@@ -171,5 +172,15 @@ class BossProjectile extends Projectile
         } else {
             parent::attack($source);
         }
+    }
+
+    protected function getInitialDragMultiplier(): float
+    {
+        return 0.01;
+    }
+
+    protected function getInitialGravity(): float
+    {
+        return 0; // unused, overwritten in setData
     }
 }

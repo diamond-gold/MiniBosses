@@ -6,13 +6,15 @@ use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\console\ConsoleCommandSender;
 use pocketmine\data\bedrock\LegacyEntityIdToStringIdMap;
-use pocketmine\data\bedrock\LegacyItemIdToStringIdMap;
 use pocketmine\entity\EntityDataHelper;
 use pocketmine\entity\EntityFactory;
 use pocketmine\entity\Location;
 use pocketmine\event\Listener;
 use pocketmine\event\world\ChunkLoadEvent;
+use pocketmine\item\Durable;
 use pocketmine\item\Item;
+use pocketmine\item\StringToItemParser;
+use pocketmine\math\Vector3;
 use pocketmine\nbt\LittleEndianNbtSerializer;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\TreeRoot;
@@ -236,10 +238,12 @@ class Main extends PluginBase implements Listener
                         if (is_numeric($networkId)) {
                             $sender->sendMessage("Legacy int network id may not be supported in the future, please use string id instead");
                             $networkId = (int)$networkId;
-                            if (!in_array($networkId, LegacyEntityIdToStringIdMap::getInstance()->getStringToLegacyMap(), true)) {
+                            $legacyToString = LegacyEntityIdToStringIdMap::getInstance()->getLegacyToStringMap();
+                            if (!isset($legacyToString[$networkId])) {
                                 $sender->sendMessage(TF::RED . "Unrecognised Network ID or Entity type $networkId");
                                 return true;
                             }
+                            $networkId = $legacyToString[$networkId];
                         } else {
                             if (!str_starts_with($networkId, "minecraft:") && !str_contains($networkId, ":")) {
                                 $networkId = "minecraft:" . $networkId;
@@ -258,11 +262,11 @@ class Main extends PluginBase implements Listener
                             "networkId" => $networkId,
                             "x" => $pos->x, "y" => $pos->y, "z" => $pos->z, "world" => $pos->getWorld()->getFolderName(),
 
-                            "heldItem" => ((LegacyItemIdToStringIdMap::getInstance()->legacyToString($heldItem->getId()) ?? "air") . ";" . $heldItem->getMeta() . ";" . $heldItem->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($heldItem->getNamedTag())))),
-                            "offhandItem" => ((LegacyItemIdToStringIdMap::getInstance()->legacyToString($offhandItem->getId()) ?? "air") . ";" . $offhandItem->getMeta() . ";" . $offhandItem->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($offhandItem->getNamedTag())))),
+                            "heldItem" => ((StringToItemParser::getInstance()->lookupAliases($heldItem)[0] ?? "air") . ";" . ($heldItem instanceof Durable ? $heldItem->getDamage() : 0) . ";" . $heldItem->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($heldItem->getNamedTag())))),
+                            "offhandItem" => ((StringToItemParser::getInstance()->lookupAliases($offhandItem)[0] ?? "air") . ";" . ($offhandItem instanceof Durable ? $offhandItem->getDamage() : 0) . ";" . $offhandItem->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($offhandItem->getNamedTag())))),
                             "projectiles" => [],
                             "armor" => array_map(function (Item $i): string {
-                                return (LegacyItemIdToStringIdMap::getInstance()->legacyToString($i->getId()) ?? "air") . ";" . $i->getMeta() . ";" . $i->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($i->getNamedTag())));
+                                return (StringToItemParser::getInstance()->lookupAliases($i)[0] ?? "air") . ";" . ($i instanceof Durable ? $i->getDamage() : 0) . ";" . $i->getCount() . ";" . bin2hex((new LittleEndianNbtSerializer())->write(new TreeRoot($i->getNamedTag())));
                             }, $sender->getArmorInventory()->getContents(true)),
                             "minions" => []
                         ]);
@@ -359,8 +363,9 @@ class Main extends PluginBase implements Listener
                         if ($this->getServer()->getWorldManager()->loadWorld($data["world"])) {
                             $l = $this->getServer()->getWorldManager()->getWorldByName($data["world"]);
                             if ($l instanceof World) {//not needed logic wise, but just in case
-                                $l->loadChunk($data["x"] >> 4, $data["z"] >> 4);
-                                foreach ($l->getChunkEntities($data["x"] >> 4, $data["z"] >> 4) as $e) {
+                                $pos = new Vector3($data["x"], $data["y"], $data["z"]);
+                                $l->loadChunk($pos->getFloorX() >> 4, $pos->getFloorZ() >> 4);
+                                foreach ($l->getChunkEntities($pos->getFloorX() >> 4, $pos->getFloorZ() >> 4) as $e) {
                                     if ($e instanceof Boss && $e->getName() === $name) {
                                         $e->flagForDespawn();
                                     }

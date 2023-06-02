@@ -27,7 +27,6 @@ use pocketmine\math\Vector3;
 use pocketmine\nbt\JsonNbtParser;
 use pocketmine\nbt\LittleEndianNbtSerializer;
 use pocketmine\nbt\tag\CompoundTag;
-use pocketmine\network\mcpe\convert\SkinAdapterSingleton;
 use pocketmine\network\mcpe\convert\TypeConverter;
 use pocketmine\network\mcpe\protocol\AddActorPacket;
 use pocketmine\network\mcpe\protocol\AddPlayerPacket;
@@ -265,7 +264,7 @@ class Boss extends Living
             }
         }
         $this->autoAttack = $this->validateType($data, "autoAttack", "boolean");
-        $this->setImmobile();
+        $this->setNoClientPredictions();
         $this->setNameTagAlwaysVisible();
         $this->setNameTagVisible();
         if (isset($data["health"])) {
@@ -488,7 +487,7 @@ class Boss extends Living
                 throw new AssumptionFailedError("Boss " . $this->getName() . " has no skin");
             }
             $uuid = Uuid::uuid4();
-            $player->getNetworkSession()->sendDataPacket(PlayerListPacket::add([PlayerListEntry::createAdditionEntry($uuid, $this->id, $this->getName(), SkinAdapterSingleton::get()->toSkinData($this->skin))]));
+            $player->getNetworkSession()->sendDataPacket(PlayerListPacket::add([PlayerListEntry::createAdditionEntry($uuid, $this->id, $this->getName(), TypeConverter::getInstance()->getSkinAdapter()->toSkinData($this->skin))]));
 
             $player->getNetworkSession()->sendDataPacket(AddPlayerPacket::create(
                 $uuid,

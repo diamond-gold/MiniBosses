@@ -414,6 +414,9 @@ class Main extends PluginBase implements Listener
             return "Failed to load chunk at " . $pos . " (is it generated yet?)";
         }
         $ent = new Boss($pos, CompoundTag::create()->setString("CustomName", $name));
+        if ($ent->isFlaggedForDespawn()) {
+            return "Boss is flagged for despawn, check console for errors";
+        }
         $ent->spawnToAll();
         return $ent;
     }

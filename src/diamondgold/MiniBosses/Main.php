@@ -34,6 +34,8 @@ class Main extends PluginBase implements Listener
     public Config $data;
     /** @var string[][][] */
     private array $chunkLoadCache = [];
+    /** @var bool[] */
+    private array $respawnInProgress = [];
 
     protected function onEnable(): void
     {
@@ -212,7 +214,7 @@ class Main extends PluginBase implements Listener
              * @var string $name
              */
             foreach ($this->data->getAll() as $name => $data) {
-                if ($data["enabled"] ?? true) {
+                if (($data["enabled"] ?? true) and !isset($this->respawnInProgress[$name])) {
                     $this->chunkLoadCache[$data["world"]][(intval($data["x"]) >> 4) . " " . (intval($data["z"]) >> 4)][] = $name;
                 }
             }
@@ -424,7 +426,9 @@ class Main extends PluginBase implements Listener
     public function respawn(string $name, int $time): void
     {
         if ($this->data->get($name)) {
+            $this->respawnInProgress[$name] = true;
             $this->getScheduler()->scheduleDelayedTask(new ClosureTask(function () use ($name): void {
+                unset($this->respawnInProgress[$name]);
                 $result = $this->spawnBoss($name);
                 if (!$result instanceof Boss) {
                     $this->getLogger()->error("Boss $name failed to respawn: " . $result);
